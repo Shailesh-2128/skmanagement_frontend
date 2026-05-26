@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import usersApi, { UserCreateInput } from '../../../api/users.api';
 import groupsApi from '../../../api/groups.api';
@@ -6,7 +6,7 @@ import Button from '../../../components/ui/Button';
 import Input from '../../../components/ui/Input';
 import Select from '../../../components/ui/Select';
 import Modal from '../../../components/ui/Modal';
-import { Plus, Edit2, Trash2, UserPlus, Shield, UserCheck } from 'lucide-react';
+import { Plus, Edit2, Trash2, Shield, UserCheck } from 'lucide-react';
 
 import Loader from '../../../components/ui/Loader';
 

@@ -5,16 +5,19 @@ export interface DashboardStats {
   today: {
     total_win: number | string;
     total_sale: number | string;
+    total_commission?: number | string;
     net_profit_loss: number | string;
   };
   this_month: {
     total_win: number | string;
     total_sale: number | string;
+    total_commission?: number | string;
     net_profit_loss: number | string;
   };
   all_time: {
     total_win: number | string;
     total_sale: number | string;
+    total_commission?: number | string;
     net_profit_loss: number | string;
   };
 }
@@ -24,7 +27,10 @@ export interface CustomReport {
   end_date: string | null;
   total_win: number | string;
   total_sale: number | string;
+  total_commission?: number | string;
   net_profit_loss: number | string;
+  commission: number;
+  mp: number;
   transactions: Transaction[];
 }
 

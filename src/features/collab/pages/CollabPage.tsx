@@ -11,7 +11,6 @@ import {
   Calendar,
   FileDown,
   Handshake,
-  Percent,
   Calculator,
   CheckSquare,
   Square,
@@ -19,7 +18,6 @@ import {
   TrendingUp,
   TrendingDown,
   Activity,
-  IndianRupee,
 } from 'lucide-react';
 
 export const CollabPage: React.FC = () => {

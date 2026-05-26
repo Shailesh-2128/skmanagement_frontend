@@ -14,7 +14,7 @@ import Loader from '../../../components/ui/Loader';
 import { Plus, Filter, RefreshCw, Edit2, Trash2 } from 'lucide-react';
 
 export const TransactionsPage: React.FC = () => {
-  const { user, isSuperAdmin, isManager } = useAuth();
+  const { isSuperAdmin, isManager } = useAuth();
   const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
   const initialGroupParam = searchParams.get('group') || '';
@@ -81,17 +81,7 @@ export const TransactionsPage: React.FC = () => {
     queryFn: () => transactionsApi.list(queryParams),
   });
 
-  // Create Transaction Mutation
-  const createTxMutation = useMutation({
-    mutationFn: (data: any) => transactionsApi.create(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['transactionsList'] });
-      handleCloseAdd();
-    },
-    onError: (err: any) => {
-      setFormError(err.response?.data?.detail || 'Failed to log transaction.');
-    },
-  });
+
 
   // Update Transaction Mutation
   const updateTxMutation = useMutation({

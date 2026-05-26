@@ -1,5 +1,3 @@
-import { STORAGE_KEYS } from '../config/constants';
-
 export const storageService = {
   get: <T>(key: string): T | null => {
     const value = localStorage.getItem(key);

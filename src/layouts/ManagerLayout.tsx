@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { LayoutDashboard, History, BarChart3, LogOut, Menu, X } from 'lucide-react';
+import { LayoutDashboard, BarChart3, LogOut, Menu, X } from 'lucide-react';
 
 export const ManagerLayout: React.FC = () => {
   const { user, logout } = useAuth();

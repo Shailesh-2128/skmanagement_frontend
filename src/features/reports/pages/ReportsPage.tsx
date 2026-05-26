@@ -133,9 +133,9 @@ export const ReportsPage: React.FC = () => {
   // Prepare chart data for distribution pie chart
   const pieChartData = React.useMemo(() => {
     if (!report) return [];
-    const sales = typeof report.total_sale === 'string' ? parseFloat(report.total_sale) : report.total_sale;
-    const wins = typeof report.total_win === 'string' ? parseFloat(report.total_win) : report.total_win;
-    const comm = typeof report.total_commission === 'string' ? parseFloat(report.total_commission) : report.total_commission;
+    const sales = (typeof report.total_sale === 'string' ? parseFloat(report.total_sale) : report.total_sale) || 0;
+    const wins = (typeof report.total_win === 'string' ? parseFloat(report.total_win) : report.total_win) || 0;
+    const comm = (typeof report.total_commission === 'string' ? parseFloat(report.total_commission) : report.total_commission) || 0;
     
     return [
       { name: 'Wins (Payout)', value: wins, color: '#ef4444' },
@@ -435,7 +435,7 @@ export const ReportsPage: React.FC = () => {
               <div className="space-y-1">
                 <p className="text-sm font-semibold text-slate-500 uppercase tracking-wide">Profit Margin</p>
                 <h3 className={`text-2xl font-bold ${isProfit ? 'text-emerald-600' : 'text-red-600'}`}>
-                  {((parseFloat(report?.total_sale || 0) > 0 ? (netProfit / parseFloat(report?.total_sale || 0)) * 100 : 0)).toFixed(2)}%
+                  {((parseFloat(String(report?.total_sale || 0)) > 0 ? (netProfit / parseFloat(String(report?.total_sale || 0))) * 100 : 0)).toFixed(2)}%
                 </h3>
                 <p className="text-xs text-slate-400 font-semibold">Net profit relative to sales</p>
               </div>
@@ -449,7 +449,7 @@ export const ReportsPage: React.FC = () => {
               <div className="space-y-1">
                 <p className="text-sm font-semibold text-slate-500 uppercase tracking-wide">Win-to-Sale Ratio</p>
                 <h3 className="text-2xl font-bold text-slate-800">
-                  {((parseFloat(report?.total_sale || 0) > 0 ? (parseFloat(report?.total_win || 0) / parseFloat(report?.total_sale || 0)) * 100 : 0)).toFixed(2)}%
+                  {((parseFloat(String(report?.total_sale || 0)) > 0 ? (parseFloat(String(report?.total_win || 0)) / parseFloat(String(report?.total_sale || 0))) * 100 : 0)).toFixed(2)}%
                 </h3>
                 <p className="text-xs text-slate-400 font-semibold">Payout frequency percentage</p>
               </div>
