@@ -135,8 +135,8 @@ export const AdminDashboard: React.FC = () => {
     return <Loader />;
   }
 
-  const allTime = stats?.all_time || { total_win: 0, total_sale: 0, net_profit_loss: 0 };
-  const thisMonth = stats?.this_month || { total_win: 0, total_sale: 0, net_profit_loss: 0 };
+  const allTime = stats?.all_time || { total_win: 0, total_sale: 0, total_commission: 0, net_profit_loss: 0 };
+  const thisMonth = stats?.this_month || { total_win: 0, total_sale: 0, total_commission: 0, net_profit_loss: 0 };
   
   const netProfit = typeof allTime.net_profit_loss === 'string' ? parseFloat(allTime.net_profit_loss) : allTime.net_profit_loss;
   const isProfit = netProfit >= 0;

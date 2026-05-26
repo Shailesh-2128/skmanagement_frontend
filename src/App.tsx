@@ -1,4 +1,3 @@
-import React from 'react';
 import Providers from './app/providers';
 import AppRouter from './app/router';
 
