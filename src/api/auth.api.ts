@@ -14,5 +14,9 @@ export const authApi = {
     const response = await api.get<User>('/auth/me/');
     return response.data;
   },
+  updateMe: async (data: Partial<User>): Promise<User> => {
+    const response = await api.patch<User>('/auth/me/', data);
+    return response.data;
+  },
 };
 export default authApi;

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { LayoutDashboard, BarChart3, LogOut, Menu, X } from 'lucide-react';
+import { LayoutDashboard, BarChart3, LogOut, Menu, X, Scissors, ChevronDown, ChevronUp, HelpCircle, Settings } from 'lucide-react';
+import SettingsPanel from '../components/SettingsPanel';
 
 export const ManagerLayout: React.FC = () => {
   const { user, logout } = useAuth();
@@ -9,6 +10,18 @@ export const ManagerLayout: React.FC = () => {
   const navigate = useNavigate();
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [cuttingOpen, setCuttingOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
+  const searchParams = new URLSearchParams(location.search);
+  const activeView = searchParams.get('view') || 'panna';
+
+  // Automatically open dropdown if under cutting path
+  useEffect(() => {
+    if (location.pathname === '/manager/cutting') {
+      setCuttingOpen(true);
+    }
+  }, [location.pathname]);
 
   // Close sidebar on page navigation
   useEffect(() => {
@@ -23,6 +36,8 @@ export const ManagerLayout: React.FC = () => {
   const navItems = [
     { path: '/manager/dashboard', name: 'Dashboard', icon: LayoutDashboard },
     { path: '/manager/reports', name: 'Reports', icon: BarChart3 },
+    { path: '/manager/cutting', name: 'Cutting', icon: Scissors },
+    { path: '/manager/support', name: 'Support', icon: HelpCircle },
   ];
 
   return (
@@ -31,7 +46,7 @@ export const ManagerLayout: React.FC = () => {
       <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
         <div className="sidebar-brand">
           <div className="brand-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
               <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
             </svg>
           </div>
@@ -53,6 +68,60 @@ export const ManagerLayout: React.FC = () => {
           <span className="nav-section">Main Menu</span>
           {navItems.map((item) => {
             const Icon = item.icon;
+            if (item.path === '/manager/cutting') {
+              const isPannaActive = location.pathname === '/manager/cutting' && activeView === 'panna';
+              const isJodiActive = location.pathname === '/manager/cutting' && activeView === 'jodi';
+              const isSpActive = location.pathname === '/manager/cutting' && activeView === 'sp';
+              const isDpActive = location.pathname === '/manager/cutting' && activeView === 'dp';
+              
+              return (
+                <div key={item.path} className="space-y-0.5">
+                  <button
+                    onClick={() => setCuttingOpen(!cuttingOpen)}
+                    className={`nav-item w-full flex items-center justify-between cursor-pointer ${
+                      isPannaActive || isJodiActive || isSpActive || isDpActive ? 'bg-slate-100/50' : ''
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="nav-icon">
+                        <Icon className="h-4.5 w-4.5 text-blue-600" />
+                      </span>
+                      <span className="nav-label">Cutting Panel</span>
+                    </div>
+                    {cuttingOpen ? <ChevronUp className="h-4 w-4 text-slate-500" /> : <ChevronDown className="h-4 w-4 text-slate-500" />}
+                  </button>
+                  {cuttingOpen && (
+                    <div className="pl-4 space-y-1 mt-1 border-l border-slate-100 ml-4.5">
+                      <Link
+                        to="/manager/cutting?view=panna"
+                        className={`nav-item ${isPannaActive ? 'active' : ''}`}
+                      >
+                        <span className="nav-label font-medium text-xs">Panna Chart (220 Family)</span>
+                      </Link>
+                      <Link
+                        to="/manager/cutting?view=jodi"
+                        className={`nav-item ${isJodiActive ? 'active' : ''}`}
+                      >
+                        <span className="nav-label font-medium text-xs">Jodi Chart (00-99)</span>
+                      </Link>
+                      <Link
+                        to="/manager/cutting?view=sp"
+                        className={`nav-item ${isSpActive ? 'active' : ''}`}
+                      >
+                        <span className="nav-label font-medium text-xs">SP Chart (0-9)</span>
+                      </Link>
+                      <Link
+                        to="/manager/cutting?view=dp"
+                        className={`nav-item ${isDpActive ? 'active' : ''}`}
+                      >
+                        <span className="nav-label font-medium text-xs">DP Chart (0-9)</span>
+                      </Link>
+                    </div>
+                  )}
+                </div>
+              );
+            }
+
             const isActive = location.pathname === item.path;
             return (
               <Link
@@ -108,10 +177,25 @@ export const ManagerLayout: React.FC = () => {
               <Menu className="h-5.5 w-5.5" />
             </button>
             <h1 className="text-lg font-bold text-slate-800">
-              {navItems.find((item) => item.path === location.pathname)?.name || 'Manager Panel'}
+              {location.pathname === '/manager/cutting'
+                ? activeView === 'panna'
+                  ? 'Cutting Panel (Panna)'
+                  : activeView === 'jodi'
+                  ? 'Jodi Chart'
+                  : activeView === 'sp'
+                  ? 'SP Chart'
+                  : 'DP Chart'
+                : navItems.find((item) => item.path === location.pathname)?.name || 'Manager Panel'}
             </h1>
           </div>
           <div className="flex items-center space-x-4">
+            <button
+              onClick={() => setIsSettingsOpen(true)}
+              className="p-2 text-slate-500 hover:bg-slate-100 rounded-xl transition duration-200 cursor-pointer"
+              title="App Settings"
+            >
+              <Settings className="h-5 w-5" />
+            </button>
             <div className="text-right">
               <p className="text-sm font-semibold text-slate-800">{user?.username}</p>
               <p className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2.5 py-0.5 rounded-full inline-block">
@@ -123,6 +207,8 @@ export const ManagerLayout: React.FC = () => {
             </div>
           </div>
         </header>
+
+        <SettingsPanel isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
 
         {/* Content Wrapper */}
         <main className="flex-1 overflow-y-auto p-8 max-w-7xl w-full mx-auto">

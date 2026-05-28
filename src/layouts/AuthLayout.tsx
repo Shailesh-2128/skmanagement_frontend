@@ -1,12 +1,30 @@
 import React from 'react';
 import { Outlet, Navigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import Loader from '../components/ui/Loader';
 
 export const AuthLayout: React.FC = () => {
-  const { isAuthenticated, isSuperAdmin } = useAuth();
+  const { isAuthenticated, user } = useAuth();
 
   if (isAuthenticated) {
-    return <Navigate to={isSuperAdmin ? '/admin/dashboard' : '/manager/dashboard'} replace />;
+    if (!user) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-slate-50">
+          <Loader />
+        </div>
+      );
+    }
+
+    if (user.role === 'SAAS_OWNER') {
+      return <Navigate to="/saas/dashboard" replace />;
+    }
+    if (user.role === 'SUPER_ADMIN') {
+      return <Navigate to="/admin/dashboard" replace />;
+    }
+    if (user.role === 'CUTTING') {
+      return <Navigate to="/cutting/dashboard" replace />;
+    }
+    return <Navigate to="/manager/dashboard" replace />;
   }
 
   return (

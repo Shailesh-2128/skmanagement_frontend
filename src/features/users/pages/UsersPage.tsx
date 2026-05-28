@@ -23,7 +23,7 @@ export const UsersPage: React.FC = () => {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState<'SUPER_ADMIN' | 'MANAGER'>('MANAGER');
+  const [role, setRole] = useState<'SUPER_ADMIN' | 'MANAGER' | 'CUTTING'>('MANAGER');
   const [groupId, setGroupId] = useState<string>('');
   const [formError, setFormError] = useState('');
 
@@ -204,6 +204,8 @@ export const UsersPage: React.FC = () => {
                       className={`px-2 py-0.5 rounded-full text-xs font-bold inline-flex items-center space-x-1 ${
                         u.role === 'SUPER_ADMIN'
                           ? 'bg-blue-50 text-blue-600'
+                          : u.role === 'CUTTING'
+                          ? 'bg-amber-50 text-amber-600'
                           : 'bg-indigo-50 text-indigo-600'
                       }`}
                     >
@@ -211,6 +213,11 @@ export const UsersPage: React.FC = () => {
                         <>
                           <Shield className="h-3 w-3 mr-1" />
                           <span>Super Admin</span>
+                        </>
+                      ) : u.role === 'CUTTING' ? (
+                        <>
+                          <UserCheck className="h-3 w-3 mr-1" />
+                          <span>Cutting Operator</span>
                         </>
                       ) : (
                         <>
@@ -221,7 +228,7 @@ export const UsersPage: React.FC = () => {
                     </span>
                   </td>
                   <td className="px-6 py-4">
-                    {u.role === 'SUPER_ADMIN' ? (
+                    {u.role === 'SUPER_ADMIN' || u.role === 'CUTTING' ? (
                       <span className="text-slate-400 italic">Global Access</span>
                     ) : u.group_name ? (
                       <span className="font-semibold text-slate-700">{u.group_name}</span>
@@ -299,12 +306,13 @@ export const UsersPage: React.FC = () => {
             options={[
               { value: 'SUPER_ADMIN', label: 'Super Admin' },
               { value: 'MANAGER', label: 'Group Manager' },
+              { value: 'CUTTING', label: 'Cutting Operator' },
             ]}
             value={role}
             onChange={(e) => {
-              const r = e.target.value as 'SUPER_ADMIN' | 'MANAGER';
+              const r = e.target.value as 'SUPER_ADMIN' | 'MANAGER' | 'CUTTING';
               setRole(r);
-              if (r === 'SUPER_ADMIN') setGroupId('');
+              if (r === 'SUPER_ADMIN' || r === 'CUTTING') setGroupId('');
             }}
           />
 
@@ -367,12 +375,13 @@ export const UsersPage: React.FC = () => {
             options={[
               { value: 'SUPER_ADMIN', label: 'Super Admin' },
               { value: 'MANAGER', label: 'Group Manager' },
+              { value: 'CUTTING', label: 'Cutting Operator' },
             ]}
             value={role}
             onChange={(e) => {
-              const r = e.target.value as 'SUPER_ADMIN' | 'MANAGER';
+              const r = e.target.value as 'SUPER_ADMIN' | 'MANAGER' | 'CUTTING';
               setRole(r);
-              if (r === 'SUPER_ADMIN') setGroupId('');
+              if (r === 'SUPER_ADMIN' || r === 'CUTTING') setGroupId('');
             }}
           />
 

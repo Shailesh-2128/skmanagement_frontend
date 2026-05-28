@@ -6,6 +6,7 @@ import RoleRoute from './RoleRoute';
 // Layouts
 import AdminLayout from '../layouts/AdminLayout';
 import ManagerLayout from '../layouts/ManagerLayout';
+import CuttingLayout from '../layouts/CuttingLayout';
 import AuthLayout from '../layouts/AuthLayout';
 
 // Pages
@@ -13,6 +14,8 @@ import Login from '../pages/Login';
 import Dashboard from '../pages/Dashboard';
 import NotFound from '../pages/NotFound';
 import Unauthorized from '../pages/Unauthorized';
+import SaaSLogin from '../pages/SaaSLogin';
+import SaaSDashboard from '../pages/SaaSDashboard';
 
 // Feature Pages
 import AdminDashboard from '../features/auth/pages/AdminDashboard';
@@ -23,6 +26,8 @@ import TransactionsPage from '../features/transactions/pages/TransactionsPage';
 import ReportsPage from '../features/reports/pages/ReportsPage';
 import UsersPage from '../features/users/pages/UsersPage';
 import CollabPage from '../features/collab/pages/CollabPage';
+import CuttingPage from '../features/cutting/pages/CuttingPage';
+import SupportPage from '../features/support/pages/SupportPage';
 
 export const AppRoutes: React.FC = () => {
   return (
@@ -31,6 +36,7 @@ export const AppRoutes: React.FC = () => {
       <Route element={<AuthLayout />}>
         <Route path="/login" element={<Login />} />
       </Route>
+      <Route path="/saas/login" element={<SaaSLogin />} />
 
       {/* Common redirect path */}
       <Route path="/unauthorized" element={<Unauthorized />} />
@@ -38,6 +44,11 @@ export const AppRoutes: React.FC = () => {
       {/* Protected routes */}
       <Route element={<ProtectedRoute />}>
         <Route path="/" element={<Dashboard />} />
+
+        {/* SAAS OWNER ROUTE GROUP */}
+        <Route element={<RoleRoute allowedRoles={['SAAS_OWNER']} />}>
+          <Route path="/saas/dashboard" element={<SaaSDashboard />} />
+        </Route>
 
         {/* SUPER ADMIN ROUTE GROUP */}
         <Route element={<RoleRoute allowedRoles={['SUPER_ADMIN']} />}>
@@ -47,8 +58,10 @@ export const AppRoutes: React.FC = () => {
             <Route path="/admin/groups/:id" element={<GroupDetailPage />} />
             <Route path="/admin/transactions" element={<TransactionsPage />} />
             <Route path="/admin/reports" element={<ReportsPage />} />
-            <Route path="/admin/users" element={<UsersPage />} />
             <Route path="/admin/collab" element={<CollabPage />} />
+            <Route path="/admin/cutting" element={<CuttingPage />} />
+            <Route path="/admin/users" element={<UsersPage />} />
+            <Route path="/admin/support" element={<SupportPage />} />
           </Route>
         </Route>
 
@@ -58,6 +71,16 @@ export const AppRoutes: React.FC = () => {
             <Route path="/manager/dashboard" element={<ManagerDashboard />} />
             <Route path="/manager/transactions" element={<TransactionsPage />} />
             <Route path="/manager/reports" element={<ReportsPage />} />
+            <Route path="/manager/cutting" element={<CuttingPage />} />
+            <Route path="/manager/support" element={<SupportPage />} />
+          </Route>
+        </Route>
+
+        {/* CUTTING ROUTE GROUP */}
+        <Route element={<RoleRoute allowedRoles={['CUTTING']} />}>
+          <Route element={<CuttingLayout />}>
+            <Route path="/cutting/dashboard" element={<CuttingPage />} />
+            <Route path="/cutting/support" element={<SupportPage />} />
           </Route>
         </Route>
       </Route>

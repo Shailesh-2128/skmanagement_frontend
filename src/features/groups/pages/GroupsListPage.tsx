@@ -7,7 +7,7 @@ import Button from '../../../components/ui/Button';
 import Input from '../../../components/ui/Input';
 import Modal from '../../../components/ui/Modal';
 import Select from '../../../components/ui/Select';
-import { Plus, Edit2, Trash2, ShieldAlert, ChevronRight, Calendar, UserCheck } from 'lucide-react';
+import { Plus, Edit2, Trash2, ShieldAlert, ChevronRight, Calendar, UserCheck, Scissors } from 'lucide-react';
 import { formatCurrency } from '../../../utils/currency';
 
 
@@ -325,6 +325,16 @@ export const GroupsListPage: React.FC = () => {
 
             {/* Actions Footer */}
             <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-end space-x-2">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate(`/admin/cutting?groupId=${group.id}`);
+                }}
+                className="p-2 text-slate-500 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-all duration-200 cursor-pointer inline-flex"
+                title="Group Cutting Chart"
+              >
+                <Scissors className="h-4 w-4" />
+              </button>
               <button
                 onClick={(e) => {
                   e.stopPropagation();

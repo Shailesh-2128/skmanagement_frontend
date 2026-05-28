@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { setCredentials } from '../features/auth/authSlice';
 import authApi from '../api/auth.api';
+import { useAuth } from '../hooks/useAuth';
 import { KeyRound, User, ShieldAlert, Sparkles } from 'lucide-react';
 
 export const Login: React.FC = () => {
@@ -13,6 +14,21 @@ export const Login: React.FC = () => {
   
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const { user, isAuthenticated } = useAuth();
+
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      if (user.role === 'SUPER_ADMIN') {
+        navigate('/admin/dashboard');
+      } else if (user.role === 'CUTTING') {
+        navigate('/cutting/dashboard');
+      } else if (user.role === 'SAAS_OWNER') {
+        navigate('/saas/dashboard');
+      } else {
+        navigate('/manager/dashboard');
+      }
+    }
+  }, [isAuthenticated, user, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,11 +37,6 @@ export const Login: React.FC = () => {
     try {
       const data = await authApi.login({ username, password });
       dispatch(setCredentials(data));
-      if (data.user.role === 'SUPER_ADMIN') {
-        navigate('/admin/dashboard');
-      } else {
-        navigate('/manager/dashboard');
-      }
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Invalid username or password');
     } finally {

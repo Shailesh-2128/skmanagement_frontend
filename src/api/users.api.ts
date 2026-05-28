@@ -5,7 +5,7 @@ export interface UserCreateInput {
   username: string;
   email: string;
   password?: string;
-  role: 'SUPER_ADMIN' | 'MANAGER';
+  role: 'SUPER_ADMIN' | 'MANAGER' | 'CUTTING';
   group?: number | null;
 }
 
