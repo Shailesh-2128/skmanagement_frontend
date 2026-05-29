@@ -1,6 +1,6 @@
 import { User } from '../types/auth.types';
 
-export const hasRole = (user: User | null, roles: Array<'SUPER_ADMIN' | 'MANAGER' | 'CUTTING' | 'SAAS_OWNER'>): boolean => {
+export const hasRole = (user: User | null, roles: Array<'SUPER_ADMIN' | 'MANAGER' | 'CUTTING' | 'SAAS_OWNER' | 'ACCOUNTANT'>): boolean => {
   if (!user) return false;
   return roles.includes(user.role);
 };

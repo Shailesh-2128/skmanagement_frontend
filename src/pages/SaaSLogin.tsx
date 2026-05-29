@@ -4,11 +4,12 @@ import { useDispatch } from 'react-redux';
 import { setCredentials } from '../features/auth/authSlice';
 import authApi from '../api/auth.api';
 import { useAuth } from '../hooks/useAuth';
-import { KeyRound, User, ShieldAlert, Sparkles, Building2 } from 'lucide-react';
+import { KeyRound, User, ShieldAlert, Sparkles, Building2, Eye, EyeOff } from 'lucide-react';
 
 export const SaaSLogin: React.FC = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   
@@ -97,13 +98,20 @@ export const SaaSLogin: React.FC = () => {
                 <KeyRound className="h-4 w-4" />
               </span>
               <input
-                type="password"
+                type={showPassword ? "text" : "password"}
                 required
-                className="w-full bg-slate-50/50 border border-slate-200 focus:bg-white focus:border-purple-500 text-slate-900 rounded-xl py-3 pl-11 pr-4 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500/10 transition-all text-sm"
+                className="w-full bg-slate-50/50 border border-slate-200 focus:bg-white focus:border-purple-500 text-slate-900 rounded-xl py-3 pl-11 pr-10 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500/10 transition-all text-sm"
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 transition cursor-pointer"
+              >
+                {showPassword ? <EyeOff className="h-4.5 w-4.5" /> : <Eye className="h-4.5 w-4.5" />}
+              </button>
             </div>
           </div>
 

@@ -23,6 +23,107 @@ import {
 } from 'lucide-react';
 import { formatCurrency } from '../../../utils/currency';
 
+interface SearchableSelectProps {
+  value: string | number;
+  onChange: (val: string) => void;
+  options: { value: string | number; label: string }[];
+  placeholder?: string;
+  className?: string;
+  createOptionLabel?: string;
+  onCreateOption?: () => void;
+}
+
+const SearchableSelect: React.FC<SearchableSelectProps> = ({
+  value,
+  onChange,
+  options,
+  placeholder = 'Select...',
+  className = '',
+  createOptionLabel,
+  onCreateOption
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [search, setSearch] = useState('');
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, []);
+
+  const selectedOption = options.find(opt => opt.value.toString() === value.toString());
+  
+  const filteredOptions = options.filter(opt =>
+    opt.label.toLowerCase().includes(search.toLowerCase())
+  );
+
+  return (
+    <div className={`relative inline-block text-left ${className}`} ref={containerRef}>
+      <button
+        type="button"
+        onClick={() => { setIsOpen(!isOpen); setSearch(''); }}
+        className="w-full bg-transparent text-sm font-bold text-slate-800 flex items-center justify-between cursor-pointer outline-none border-none p-0 pr-4"
+      >
+        <span className="truncate">{selectedOption ? selectedOption.label : placeholder}</span>
+        <span className="ml-1 text-slate-400">▼</span>
+      </button>
+
+      {isOpen && (
+        <div className="absolute left-0 mt-2 w-56 rounded-xl bg-white border border-slate-200 shadow-lg z-50 overflow-hidden no-print">
+          <div className="p-2 border-b border-slate-100">
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search..."
+              className="w-full px-2.5 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-1 focus:ring-blue-500 font-medium"
+              autoFocus
+            />
+          </div>
+          <div className="max-h-60 overflow-y-auto py-1 text-xs">
+            {filteredOptions.length === 0 ? (
+              <div className="px-4 py-2 text-slate-400 italic">No matches found</div>
+            ) : (
+              filteredOptions.map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => {
+                    onChange(opt.value.toString());
+                    setIsOpen(false);
+                  }}
+                  className={`w-full text-left px-4 py-2 hover:bg-slate-50 font-semibold cursor-pointer ${
+                    opt.value.toString() === value.toString() ? 'bg-blue-50 text-blue-600' : 'text-slate-700'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))
+            )}
+            {createOptionLabel && onCreateOption && (
+              <button
+                type="button"
+                onClick={() => {
+                  onCreateOption();
+                  setIsOpen(false);
+                }}
+                className="w-full text-left px-4 py-2 text-blue-600 hover:bg-blue-50 font-bold border-t border-slate-100 cursor-pointer"
+              >
+                {createOptionLabel}
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 // The 220 family combinations arranged column by column as shown in the paper image
 const COLUMNS = [
   { header: '1', numbers: ['128', '137', '236', '678', '245', '290', '470', '579', '380', '335', '588', '489', '344', '399', '100', '155', '560', '146', '669', '119', '227', '777'] },
@@ -2184,61 +2285,42 @@ export const CuttingPage: React.FC = () => {
             {/* Group selector dropdown */}
             <div className="flex items-center gap-2 bg-white px-3 py-1.5 border border-slate-200 rounded-xl shadow-sm">
               <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">Group:</span>
-              <select
+              <SearchableSelect
                 value={selectedGroupId || ''}
-                onChange={(e) => {
-                  const val = e.target.value;
+                onChange={(val) => {
                   if (val === 'all') {
                     setSelectedGroupId('all');
                   } else {
                     setSelectedGroupId(parseInt(val, 10));
                   }
                 }}
-                className="bg-transparent text-sm font-bold text-slate-800 border-none outline-none focus:ring-0 cursor-pointer p-0 pr-6"
-              >
-                <option value="all">All Groups</option>
-                {groups.map((g: any) => (
-                  <option key={g.id} value={g.id}>
-                    {g.name}
-                  </option>
-                ))}
-              </select>
+                options={[
+                  { value: 'all', label: 'All Groups' },
+                  ...groups.map((g: any) => ({ value: g.id, label: g.name }))
+                ]}
+              />
             </div>
 
             {/* Chart Name selector dropdown */}
             <div className="flex items-center gap-2 bg-white px-3 py-1.5 border border-slate-200 rounded-xl shadow-sm">
               <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">Chart Name:</span>
-              <select
+              <SearchableSelect
                 value={selectedChartName}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  if (val === '__CREATE_NEW__') {
-                    setIsCreateChartOpen(true);
-                    setNewChartName('');
-                    setChartError('');
-                  } else {
-                    setSelectedChartName(val);
-                  }
+                onChange={(val) => {
+                  setSelectedChartName(val);
                 }}
-                className="bg-transparent text-sm font-bold text-slate-800 border-none outline-none focus:ring-0 cursor-pointer p-0 pr-6"
-              >
-                {chartNames.length === 0 && !selectedChartName && (
-                  <option value="" disabled>Select or Create Chart</option>
-                )}
-                {chartNames.map((name) => (
-                  <option key={name} value={name}>
-                    {name}
-                  </option>
-                ))}
-                {selectedChartName && !chartNames.includes(selectedChartName) && (
-                  <option value={selectedChartName}>
-                    {selectedChartName}
-                  </option>
-                )}
-                <option value="__CREATE_NEW__" className="text-blue-600 font-extrabold bg-blue-50/50">
-                  + Create New...
-                </option>
-              </select>
+                options={[
+                  ...chartNames.map((name) => ({ value: name, label: name })),
+                  ...(selectedChartName && !chartNames.includes(selectedChartName) ? [{ value: selectedChartName, label: selectedChartName }] : [])
+                ]}
+                placeholder={chartNames.length === 0 ? "Select or Create Chart" : "Select Chart"}
+                createOptionLabel="+ Create New..."
+                onCreateOption={() => {
+                  setIsCreateChartOpen(true);
+                  setNewChartName('');
+                  setChartError('');
+                }}
+              />
             </div>
 
             {/* Session selector dropdown */}
@@ -2534,21 +2616,17 @@ export const CuttingPage: React.FC = () => {
                       {/* Group Select */}
                       <div className="space-y-1">
                         <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">Group</label>
-                        <select
+                        <SearchableSelect
                           value={addCuttingGroup}
-                          onChange={(e) => {
-                            const val = e.target.value;
+                          onChange={(val) => {
                             setAddCuttingGroup(val === 'all' ? 'all' : parseInt(val, 10));
                           }}
-                          className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/20 transition"
-                        >
-                          <option value="all">All Groups</option>
-                          {groups.map((g: any) => (
-                            <option key={g.id} value={g.id}>
-                              {g.name}
-                            </option>
-                          ))}
-                        </select>
+                          options={[
+                            { value: 'all', label: 'All Groups' },
+                            ...groups.map((g: any) => ({ value: g.id, label: g.name }))
+                          ]}
+                          className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-800"
+                        />
                       </div>
 
                       {/* Date Select */}
@@ -2578,37 +2656,24 @@ export const CuttingPage: React.FC = () => {
                       {/* Chart Name Select */}
                       <div className="space-y-1">
                         <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">Chart Name</label>
-                        <select
+                        <SearchableSelect
                           value={addCuttingChartName}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            if (val === '__CREATE_NEW__') {
-                              setIsCreateChartOpen(true);
-                              setNewChartName('');
-                              setChartError('');
-                            } else {
-                              setAddCuttingChartName(val);
-                            }
+                          onChange={(val) => {
+                            setAddCuttingChartName(val);
                           }}
-                          className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/20 transition"
-                        >
-                          {addCuttingChartNames.length === 0 && !addCuttingChartName && (
-                            <option value="" disabled>Select or Create Chart</option>
-                          )}
-                          {addCuttingChartNames.map((name) => (
-                            <option key={name} value={name}>
-                              {name}
-                            </option>
-                          ))}
-                          {addCuttingChartName && !addCuttingChartNames.includes(addCuttingChartName) && (
-                            <option value={addCuttingChartName}>
-                              {addCuttingChartName}
-                            </option>
-                          )}
-                          <option value="__CREATE_NEW__" className="text-blue-600 font-extrabold bg-blue-50/50">
-                            + Create New...
-                          </option>
-                        </select>
+                          options={[
+                            ...addCuttingChartNames.map((name) => ({ value: name, label: name })),
+                            ...(addCuttingChartName && !addCuttingChartNames.includes(addCuttingChartName) ? [{ value: addCuttingChartName, label: addCuttingChartName }] : [])
+                          ]}
+                          placeholder={addCuttingChartNames.length === 0 ? "Select or Create Chart" : "Select Chart"}
+                          className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-800"
+                          createOptionLabel="+ Create New..."
+                          onCreateOption={() => {
+                            setIsCreateChartOpen(true);
+                            setNewChartName('');
+                            setChartError('');
+                          }}
+                        />
                       </div>
 
                       {/* Overall Threshold Limits */}

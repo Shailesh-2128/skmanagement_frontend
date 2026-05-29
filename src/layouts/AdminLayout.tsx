@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { LayoutDashboard, Users, History, BarChart3, LogOut, UserPlus, Menu, X, Handshake, Scissors, ChevronDown, ChevronUp, HelpCircle, Settings } from 'lucide-react';
+import { LayoutDashboard, Users, History, BarChart3, LogOut, UserPlus, Menu, X, Handshake, Scissors, ChevronDown, ChevronUp, HelpCircle, Settings, Calculator } from 'lucide-react';
 import SettingsPanel from '../components/SettingsPanel';
 
 export const AdminLayout: React.FC = () => {
@@ -40,6 +40,7 @@ export const AdminLayout: React.FC = () => {
     { path: '/admin/reports', name: 'Reports', icon: BarChart3 },
     { path: '/admin/collab', name: 'Collab', icon: Handshake },
     { path: '/admin/cutting', name: 'Cutting', icon: Scissors },
+    { path: '/admin/accountant', name: 'Accountant Calc', icon: Calculator },
     { path: '/admin/users', name: 'Users', icon: UserPlus },
     { path: '/admin/support', name: 'Support', icon: HelpCircle },
   ];

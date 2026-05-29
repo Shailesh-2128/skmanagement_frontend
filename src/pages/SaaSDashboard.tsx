@@ -8,7 +8,8 @@ import {
   Building2, Plus, LogOut, Trash2, Calendar, 
   Clock, ShieldAlert, Sparkles, User, KeyRound, X, CalendarDays,
   Activity, Search, Filter, ArrowUpDown, ShieldCheck, 
-  Database, Users, BarChart3, FileDown, HelpCircle, CheckCircle2
+  Database, Users, BarChart3, FileDown, HelpCircle, CheckCircle2,
+  Eye, EyeOff
 } from 'lucide-react';
 
 export const SaaSDashboard: React.FC = () => {
@@ -29,6 +30,7 @@ export const SaaSDashboard: React.FC = () => {
   const [createName, setCreateName] = useState('');
   const [createUsername, setCreateUsername] = useState('');
   const [createPassword, setCreatePassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [createActiveDays, setCreateActiveDays] = useState(30);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
@@ -822,13 +824,20 @@ export const SaaSDashboard: React.FC = () => {
                       <KeyRound className="w-4 h-4" />
                     </span>
                     <input
-                      type="password"
+                      type={showPassword ? "text" : "password"}
                       required
-                      className="w-full bg-slate-50 border border-slate-200 focus:border-purple-500 focus:bg-white text-slate-900 rounded-xl py-3 pl-11 pr-4 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500/10 text-sm transition-all shadow-sm"
+                      className="w-full bg-slate-50 border border-slate-200 focus:border-purple-500 focus:bg-white text-slate-900 rounded-xl py-3 pl-11 pr-10 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500/10 text-sm transition-all shadow-sm"
                       placeholder="••••••••"
                       value={createPassword}
                       onChange={(e) => setCreatePassword(e.target.value)}
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 transition cursor-pointer"
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
                   </div>
                 </div>
 

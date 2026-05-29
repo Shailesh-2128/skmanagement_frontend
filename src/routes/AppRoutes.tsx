@@ -8,6 +8,10 @@ import AdminLayout from '../layouts/AdminLayout';
 import ManagerLayout from '../layouts/ManagerLayout';
 import CuttingLayout from '../layouts/CuttingLayout';
 import AuthLayout from '../layouts/AuthLayout';
+import AccountantLayout from '../layouts/AccountantLayout';
+
+// Pages
+import AccountantCalculatorPage from '../features/accountant/pages/AccountantCalculatorPage';
 
 // Pages
 import Login from '../pages/Login';
@@ -62,6 +66,15 @@ export const AppRoutes: React.FC = () => {
             <Route path="/admin/cutting" element={<CuttingPage />} />
             <Route path="/admin/users" element={<UsersPage />} />
             <Route path="/admin/support" element={<SupportPage />} />
+            <Route path="/admin/accountant" element={<AccountantCalculatorPage />} />
+          </Route>
+        </Route>
+
+        {/* ACCOUNTANT ROUTE GROUP */}
+        <Route element={<RoleRoute allowedRoles={['ACCOUNTANT']} />}>
+          <Route element={<AccountantLayout />}>
+            <Route path="/accountant/dashboard" element={<AccountantCalculatorPage />} />
+            <Route path="/accountant/groups/:id" element={<GroupDetailPage />} />
           </Route>
         </Route>
 

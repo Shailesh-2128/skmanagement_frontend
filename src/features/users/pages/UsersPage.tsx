@@ -6,9 +6,77 @@ import Button from '../../../components/ui/Button';
 import Input from '../../../components/ui/Input';
 import Select from '../../../components/ui/Select';
 import Modal from '../../../components/ui/Modal';
-import { Plus, Edit2, Trash2, Shield, UserCheck } from 'lucide-react';
+import { Plus, Edit2, Trash2, Shield, UserCheck, Calculator, ChevronDown, Check } from 'lucide-react';
 
 import Loader from '../../../components/ui/Loader';
+
+// Multi-group select component for accountants
+const MultiGroupSelect: React.FC<{
+  groups: { id: number; name: string }[];
+  selectedIds: number[];
+  onChange: (ids: number[]) => void;
+  label?: string;
+}> = ({ groups, selectedIds, onChange, label = 'Assigned Groups' }) => {
+  const [isOpen, setIsOpen] = useState(false);
+
+  const toggle = (id: number) => {
+    if (selectedIds.includes(id)) {
+      onChange(selectedIds.filter(x => x !== id));
+    } else {
+      onChange([...selectedIds, id]);
+    }
+  };
+
+  const selectedNames = groups.filter(g => selectedIds.includes(g.id)).map(g => g.name);
+
+  return (
+    <div className="relative">
+      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+        {label}
+      </label>
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full flex items-center justify-between bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-left focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors hover:border-slate-300"
+      >
+        <span className={selectedNames.length === 0 ? 'text-slate-400' : 'text-slate-700 font-medium'}>
+          {selectedNames.length === 0
+            ? 'Select groups...'
+            : selectedNames.length === 1
+            ? selectedNames[0]
+            : `${selectedNames.length} groups selected`}
+        </span>
+        <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+
+      {isOpen && (
+        <div className="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden max-h-52 overflow-y-auto">
+          {groups.length === 0 ? (
+            <p className="px-4 py-3 text-xs text-slate-400 italic">No groups available.</p>
+          ) : (
+            groups.map(g => (
+              <button
+                key={g.id}
+                type="button"
+                onClick={() => toggle(g.id)}
+                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors text-left"
+              >
+                <div className={`h-4 w-4 rounded border flex items-center justify-center flex-shrink-0 ${
+                  selectedIds.includes(g.id)
+                    ? 'bg-blue-600 border-blue-600'
+                    : 'border-slate-300 bg-white'
+                }`}>
+                  {selectedIds.includes(g.id) && <Check className="h-3 w-3 text-white" />}
+                </div>
+                <span className={selectedIds.includes(g.id) ? 'font-semibold text-blue-700' : ''}>{g.name}</span>
+              </button>
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
 
 export const UsersPage: React.FC = () => {
   const queryClient = useQueryClient();
@@ -23,8 +91,9 @@ export const UsersPage: React.FC = () => {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState<'SUPER_ADMIN' | 'MANAGER' | 'CUTTING'>('MANAGER');
+  const [role, setRole] = useState<'SUPER_ADMIN' | 'MANAGER' | 'CUTTING' | 'ACCOUNTANT'>('MANAGER');
   const [groupId, setGroupId] = useState<string>('');
+  const [accountantGroupIds, setAccountantGroupIds] = useState<number[]>([]);
   const [formError, setFormError] = useState('');
 
   // Fetch all users
@@ -75,7 +144,8 @@ export const UsersPage: React.FC = () => {
       setSelectedUser(null);
     },
     onError: (err: any) => {
-      alert(err.response?.data?.detail || 'Failed to delete user.');
+      const errMsg = err.response?.data?.detail || 'Failed to delete user.';
+      setFormError(errMsg);
     },
   });
 
@@ -86,6 +156,7 @@ export const UsersPage: React.FC = () => {
     setPassword('');
     setRole('MANAGER');
     setGroupId('');
+    setAccountantGroupIds([]);
     setFormError('');
     setIsAddOpen(true);
   };
@@ -98,6 +169,7 @@ export const UsersPage: React.FC = () => {
     setPassword(''); // Leave password blank on edit unless updating
     setRole(user.role);
     setGroupId(user.group ? user.group.toString() : '');
+    setAccountantGroupIds(user.accountant_groups || []);
     setFormError('');
     setIsEditOpen(true);
   };
@@ -120,12 +192,18 @@ export const UsersPage: React.FC = () => {
       return;
     }
 
+    if (role === 'MANAGER' && !groupId) {
+      setFormError('Please select an assigned group for this Group Manager.');
+      return;
+    }
+
     const payload: UserCreateInput = {
       username: username.trim(),
       email: email.trim(),
       password,
       role,
       group: role === 'MANAGER' && groupId ? parseInt(groupId) : null,
+      accountant_groups: role === 'ACCOUNTANT' ? accountantGroupIds : [],
     };
 
     createUserMutation.mutate(payload);
@@ -139,11 +217,17 @@ export const UsersPage: React.FC = () => {
       return;
     }
 
+    if (role === 'MANAGER' && !groupId) {
+      setFormError('Please select an assigned group for this Group Manager.');
+      return;
+    }
+
     const payload: Partial<UserCreateInput> = {
       username: username.trim(),
       email: email.trim(),
       role,
       group: role === 'MANAGER' && groupId ? parseInt(groupId) : null,
+      accountant_groups: role === 'ACCOUNTANT' ? accountantGroupIds : [],
     };
 
     if (password.trim()) {
@@ -160,6 +244,8 @@ export const UsersPage: React.FC = () => {
   if (isLoading) {
     return <Loader />;
   }
+
+  const groupOptions = groups?.map((g) => ({ value: g.id, label: g.name })) || [];
 
   return (
     <div className="space-y-6">
@@ -184,7 +270,7 @@ export const UsersPage: React.FC = () => {
                 <th className="px-6 py-4">Username</th>
                 <th className="px-6 py-4">Email</th>
                 <th className="px-6 py-4">Role</th>
-                <th className="px-6 py-4">Assigned Group</th>
+                <th className="px-6 py-4">Assigned Group(s)</th>
                 <th className="px-6 py-4">Date Created</th>
                 <th className="px-6 py-4 text-right">Actions</th>
               </tr>
@@ -206,6 +292,8 @@ export const UsersPage: React.FC = () => {
                           ? 'bg-blue-50 text-blue-600'
                           : u.role === 'CUTTING'
                           ? 'bg-amber-50 text-amber-600'
+                          : u.role === 'ACCOUNTANT'
+                          ? 'bg-purple-50 text-purple-600'
                           : 'bg-indigo-50 text-indigo-600'
                       }`}
                     >
@@ -219,6 +307,11 @@ export const UsersPage: React.FC = () => {
                           <UserCheck className="h-3 w-3 mr-1" />
                           <span>Cutting Operator</span>
                         </>
+                      ) : u.role === 'ACCOUNTANT' ? (
+                        <>
+                          <Calculator className="h-3 w-3 mr-1" />
+                          <span>Accountant</span>
+                        </>
                       ) : (
                         <>
                           <UserCheck className="h-3 w-3 mr-1" />
@@ -230,6 +323,18 @@ export const UsersPage: React.FC = () => {
                   <td className="px-6 py-4">
                     {u.role === 'SUPER_ADMIN' || u.role === 'CUTTING' ? (
                       <span className="text-slate-400 italic">Global Access</span>
+                    ) : u.role === 'ACCOUNTANT' ? (
+                      u.accountant_group_names && u.accountant_group_names.length > 0 ? (
+                        <div className="flex flex-wrap gap-1">
+                          {u.accountant_group_names.map((g: { id: number; name: string }) => (
+                            <span key={g.id} className="px-2 py-0.5 bg-purple-50 text-purple-700 border border-purple-100 rounded-full text-xs font-semibold">
+                              {g.name}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-amber-500 italic font-medium">No groups assigned</span>
+                      )
                     ) : u.group_name ? (
                       <span className="font-semibold text-slate-700">{u.group_name}</span>
                     ) : (
@@ -307,22 +412,37 @@ export const UsersPage: React.FC = () => {
               { value: 'SUPER_ADMIN', label: 'Super Admin' },
               { value: 'MANAGER', label: 'Group Manager' },
               { value: 'CUTTING', label: 'Cutting Operator' },
+              { value: 'ACCOUNTANT', label: 'Accountant' },
             ]}
             value={role}
             onChange={(e) => {
-              const r = e.target.value as 'SUPER_ADMIN' | 'MANAGER' | 'CUTTING';
+              const r = e.target.value as 'SUPER_ADMIN' | 'MANAGER' | 'CUTTING' | 'ACCOUNTANT';
               setRole(r);
-              if (r === 'SUPER_ADMIN' || r === 'CUTTING') setGroupId('');
+              if (r === 'SUPER_ADMIN' || r === 'CUTTING') {
+                setGroupId('');
+                setAccountantGroupIds([]);
+              }
+              if (r === 'ACCOUNTANT') setGroupId('');
             }}
           />
 
           {role === 'MANAGER' && (
             <Select
               label="Assigned Group"
+              required
               placeholder="Select associated group"
-              options={groups?.map((g) => ({ value: g.id, label: g.name })) || []}
+              options={groupOptions}
               value={groupId}
               onChange={(e) => setGroupId(e.target.value)}
+            />
+          )}
+
+          {role === 'ACCOUNTANT' && (
+            <MultiGroupSelect
+              groups={groups || []}
+              selectedIds={accountantGroupIds}
+              onChange={setAccountantGroupIds}
+              label="Assigned Groups (can handle multiple)"
             />
           )}
 
@@ -376,22 +496,37 @@ export const UsersPage: React.FC = () => {
               { value: 'SUPER_ADMIN', label: 'Super Admin' },
               { value: 'MANAGER', label: 'Group Manager' },
               { value: 'CUTTING', label: 'Cutting Operator' },
+              { value: 'ACCOUNTANT', label: 'Accountant' },
             ]}
             value={role}
             onChange={(e) => {
-              const r = e.target.value as 'SUPER_ADMIN' | 'MANAGER' | 'CUTTING';
+              const r = e.target.value as 'SUPER_ADMIN' | 'MANAGER' | 'CUTTING' | 'ACCOUNTANT';
               setRole(r);
-              if (r === 'SUPER_ADMIN' || r === 'CUTTING') setGroupId('');
+              if (r === 'SUPER_ADMIN' || r === 'CUTTING') {
+                setGroupId('');
+                setAccountantGroupIds([]);
+              }
+              if (r === 'ACCOUNTANT') setGroupId('');
             }}
           />
 
           {role === 'MANAGER' && (
             <Select
               label="Assigned Group"
+              required
               placeholder="Select associated group"
-              options={groups?.map((g) => ({ value: g.id, label: g.name })) || []}
+              options={groupOptions}
               value={groupId}
               onChange={(e) => setGroupId(e.target.value)}
+            />
+          )}
+
+          {role === 'ACCOUNTANT' && (
+            <MultiGroupSelect
+              groups={groups || []}
+              selectedIds={accountantGroupIds}
+              onChange={setAccountantGroupIds}
+              label="Assigned Groups (can handle multiple)"
             />
           )}
 
@@ -412,6 +547,11 @@ export const UsersPage: React.FC = () => {
           <p className="text-slate-600">
             Are you sure you want to delete user account <b>{selectedUser?.username}</b>? This action cannot be undone.
           </p>
+          {formError && (
+            <div className="p-3 bg-red-50 text-red-600 border border-red-100 rounded-lg text-xs font-semibold">
+              {formError}
+            </div>
+          )}
           <div className="flex items-center justify-end space-x-3 pt-4 border-t border-slate-100">
             <Button type="button" variant="secondary" onClick={() => setIsDeleteOpen(false)}>
               Cancel

@@ -5,8 +5,9 @@ export interface UserCreateInput {
   username: string;
   email: string;
   password?: string;
-  role: 'SUPER_ADMIN' | 'MANAGER' | 'CUTTING';
+  role: 'SUPER_ADMIN' | 'MANAGER' | 'CUTTING' | 'ACCOUNTANT';
   group?: number | null;
+  accountant_groups?: number[];
 }
 
 export const usersApi = {

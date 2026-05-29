@@ -2,9 +2,11 @@ export interface User {
   id: number;
   username: string;
   email: string;
-  role: 'SUPER_ADMIN' | 'MANAGER' | 'CUTTING' | 'SAAS_OWNER';
+  role: 'SUPER_ADMIN' | 'MANAGER' | 'CUTTING' | 'SAAS_OWNER' | 'ACCOUNTANT';
   group: number | null;
   group_name: string | null;
+  accountant_groups: number[];
+  accountant_group_names: { id: number; name: string }[];
   tenant: number | null;
   tenant_name: string | null;
   tenant_days_remaining?: number | null;

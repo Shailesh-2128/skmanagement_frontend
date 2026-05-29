@@ -17,6 +17,7 @@ export const useAuth = () => {
   const isManager = user?.role === 'MANAGER';
   const isCuttingUser = user?.role === 'CUTTING';
   const isSaasOwner = user?.role === 'SAAS_OWNER';
+  const isAccountant = user?.role === 'ACCOUNTANT';
 
   return {
     user,
@@ -27,6 +28,7 @@ export const useAuth = () => {
     isManager,
     isCuttingUser,
     isSaasOwner,
+    isAccountant,
   };
 };
 export default useAuth;
