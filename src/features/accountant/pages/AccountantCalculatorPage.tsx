@@ -25,6 +25,7 @@ export const AccountantCalculatorPage: React.FC = () => {
   const [spending, setSpending] = useState<string>('0');
   const [customFieldName, setCustomFieldName] = useState<string>('');
   const [customFieldValue, setCustomFieldValue] = useState<string>('0');
+  const [customFieldType, setCustomFieldType] = useState<'add' | 'subtract'>('add');
   
   // Custom Modals for Alerts & Successes
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -100,7 +101,14 @@ export const AccountantCalculatorPage: React.FC = () => {
             setMpAmount(calc.mp_amount ? calc.mp_amount.toString() : '0');
             setSpending(calc.spending ? calc.spending.toString() : '0');
             setCustomFieldName(calc.custom_field_name || '');
-            setCustomFieldValue(calc.custom_field_value ? calc.custom_field_value.toString() : '0');
+            const loadedCustomVal = calc.custom_field_value ? parseFloat(calc.custom_field_value) : 0;
+            if (loadedCustomVal < 0) {
+              setCustomFieldType('subtract');
+              setCustomFieldValue(Math.abs(loadedCustomVal).toString());
+            } else {
+              setCustomFieldType('add');
+              setCustomFieldValue(loadedCustomVal.toString());
+            }
             
             // Map entries properly (convert fields to numbers)
             const mappedEntries = calc.entries.map((e: any) => ({
@@ -171,6 +179,7 @@ export const AccountantCalculatorPage: React.FC = () => {
       setSpending('0');
       setCustomFieldName('');
       setCustomFieldValue('0');
+      setCustomFieldType('add');
     },
     onError: (err: any) => {
       const detail = err.response?.data ? JSON.stringify(err.response.data) : 'Failed to save calculation.';
@@ -200,6 +209,7 @@ export const AccountantCalculatorPage: React.FC = () => {
     setSpending('0');
     setCustomFieldName('');
     setCustomFieldValue('0');
+    setCustomFieldType('add');
     setSearchParams({});
   };
 
@@ -295,9 +305,10 @@ export const AccountantCalculatorPage: React.FC = () => {
 
     const spendVal = parseFloat(spending) || 0;
     const customVal = parseFloat(customFieldValue) || 0;
+    const customValAdjusted = customFieldType === 'subtract' ? -customVal : customVal;
 
     // Final Net Profit/Loss
-    const finalNet = baseProfitLoss + mpApplied - spendVal + customVal;
+    const finalNet = baseProfitLoss + mpApplied - spendVal + customValAdjusted;
 
     setCalculationResult({
       totalSale,
@@ -310,7 +321,7 @@ export const AccountantCalculatorPage: React.FC = () => {
       mpExplanation,
       spending: spendVal,
       customFieldName: customFieldName || 'Custom Adjustment',
-      customFieldValue: customVal,
+      customFieldValue: customValAdjusted,
       finalNet
     });
   };
@@ -507,7 +518,7 @@ export const AccountantCalculatorPage: React.FC = () => {
             </div>
 
             {/* Custom Field Addon */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
                 <label className="flex items-center gap-1.5 text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
                   <span>Custom Field Label</span>
@@ -526,14 +537,32 @@ export const AccountantCalculatorPage: React.FC = () => {
 
               <div>
                 <label className="flex items-center gap-1.5 text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+                  <span>Custom Action</span>
+                  <span className="text-slate-400 cursor-help" title="Select whether to add or subtract this custom amount.">
+                    <Info className="h-3.5 w-3.5" />
+                  </span>
+                </label>
+                <select
+                  className="w-full text-sm bg-white border border-slate-200 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 font-semibold"
+                  value={customFieldType}
+                  onChange={(e) => setCustomFieldType(e.target.value as 'add' | 'subtract')}
+                >
+                  <option value="add">Add (+)</option>
+                  <option value="subtract">Subtract (-)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="flex items-center gap-1.5 text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
                   <span>Custom Amount</span>
-                  <span className="text-slate-400 cursor-help" title="Adjustment amount to apply. Positive values add, negative values subtract.">
+                  <span className="text-slate-400 cursor-help" title="Adjustment amount to apply. Always enter a positive value; the Custom Action determines if it adds or subtracts.">
                     <Info className="h-3.5 w-3.5" />
                   </span>
                 </label>
                 <input
                   type="number"
                   step="0.01"
+                  min="0"
                   className="w-full text-sm bg-white border border-slate-200 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 font-semibold"
                   value={customFieldValue}
                   onChange={(e) => setCustomFieldValue(e.target.value)}
