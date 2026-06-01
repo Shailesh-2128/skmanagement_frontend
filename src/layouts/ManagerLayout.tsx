@@ -71,15 +71,14 @@ export const ManagerLayout: React.FC = () => {
             if (item.path === '/manager/cutting') {
               const isPannaActive = location.pathname === '/manager/cutting' && activeView === 'panna';
               const isJodiActive = location.pathname === '/manager/cutting' && activeView === 'jodi';
-              const isSpActive = location.pathname === '/manager/cutting' && activeView === 'sp';
-              const isDpActive = location.pathname === '/manager/cutting' && activeView === 'dp';
+              const isAnalysisActive = location.pathname === '/manager/cutting' && activeView === 'analysis';
               
               return (
                 <div key={item.path} className="space-y-0.5">
                   <button
                     onClick={() => setCuttingOpen(!cuttingOpen)}
                     className={`nav-item w-full flex items-center justify-between cursor-pointer ${
-                      isPannaActive || isJodiActive || isSpActive || isDpActive ? 'bg-slate-100/50' : ''
+                      isPannaActive || isJodiActive || isAnalysisActive ? 'bg-slate-100/50' : ''
                     }`}
                   >
                     <div className="flex items-center gap-2">
@@ -105,16 +104,10 @@ export const ManagerLayout: React.FC = () => {
                         <span className="nav-label font-medium text-xs">Jodi Chart (00-99)</span>
                       </Link>
                       <Link
-                        to="/manager/cutting?view=sp"
-                        className={`nav-item ${isSpActive ? 'active' : ''}`}
+                        to="/manager/cutting?view=analysis"
+                        className={`nav-item ${isAnalysisActive ? 'active' : ''}`}
                       >
-                        <span className="nav-label font-medium text-xs">SP Chart (0-9)</span>
-                      </Link>
-                      <Link
-                        to="/manager/cutting?view=dp"
-                        className={`nav-item ${isDpActive ? 'active' : ''}`}
-                      >
-                        <span className="nav-label font-medium text-xs">DP Chart (0-9)</span>
+                        <span className="nav-label font-medium text-xs">Panna P&L Analysis</span>
                       </Link>
                     </div>
                   )}
@@ -178,13 +171,9 @@ export const ManagerLayout: React.FC = () => {
             </button>
             <h1 className="text-lg font-bold text-slate-800">
               {location.pathname === '/manager/cutting'
-                ? activeView === 'panna'
-                  ? 'Cutting Panel (Panna)'
-                  : activeView === 'jodi'
-                  ? 'Jodi Chart'
-                  : activeView === 'sp'
-                  ? 'SP Chart'
-                  : 'DP Chart'
+                ? activeView === 'panna' ? 'Cutting Panel (Panna)' :
+                  activeView === 'jodi' ? 'Jodi Chart' :
+                  activeView === 'analysis' ? 'Panna P&L Analysis' : 'Cutting Panel'
                 : navItems.find((item) => item.path === location.pathname)?.name || 'Manager Panel'}
             </h1>
           </div>

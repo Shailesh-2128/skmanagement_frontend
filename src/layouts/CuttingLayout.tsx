@@ -29,9 +29,8 @@ export const CuttingLayout: React.FC = () => {
 
   const isPannaActive = location.pathname === '/cutting/dashboard' && activeView === 'panna';
   const isJodiActive = location.pathname === '/cutting/dashboard' && activeView === 'jodi';
-  const isSpActive = location.pathname === '/cutting/dashboard' && activeView === 'sp';
-  const isDpActive = location.pathname === '/cutting/dashboard' && activeView === 'dp';
   const isAddCuttingActive = location.pathname === '/cutting/dashboard' && activeView === 'add-cutting';
+  const isAnalysisActive = location.pathname === '/cutting/dashboard' && activeView === 'analysis';
 
   return (
     <div className="min-h-screen bg-slate-50 relative overflow-x-hidden">
@@ -65,7 +64,7 @@ export const CuttingLayout: React.FC = () => {
             <button
               onClick={() => setCuttingOpen(!cuttingOpen)}
               className={`nav-item w-full flex items-center justify-between cursor-pointer ${
-                isPannaActive || isJodiActive || isSpActive || isDpActive || isAddCuttingActive ? 'bg-slate-100/50' : ''
+                isPannaActive || isJodiActive || isAddCuttingActive || isAnalysisActive ? 'bg-slate-100/50' : ''
               }`}
             >
               <div className="flex items-center gap-2">
@@ -97,16 +96,10 @@ export const CuttingLayout: React.FC = () => {
                   <span className="nav-label font-medium text-xs">Jodi Chart (00-99)</span>
                 </Link>
                 <Link
-                  to="/cutting/dashboard?view=sp"
-                  className={`nav-item ${isSpActive ? 'active' : ''}`}
+                  to="/cutting/dashboard?view=analysis"
+                  className={`nav-item ${isAnalysisActive ? 'active' : ''}`}
                 >
-                  <span className="nav-label font-medium text-xs">SP Chart (0-9)</span>
-                </Link>
-                <Link
-                  to="/cutting/dashboard?view=dp"
-                  className={`nav-item ${isDpActive ? 'active' : ''}`}
-                >
-                  <span className="nav-label font-medium text-xs">DP Chart (0-9)</span>
+                  <span className="nav-label font-medium text-xs">Panna P&L Analysis</span>
                 </Link>
               </div>
             )}
@@ -165,13 +158,12 @@ export const CuttingLayout: React.FC = () => {
               {activeView === 'add-cutting' ? 'Add Cutting Entry' :
                activeView === 'panna' ? 'Cutting Panel' :
                activeView === 'jodi' ? 'Jodi Chart' :
-               activeView === 'sp' ? 'SP Chart' :
-               activeView === 'dp' ? 'DP Chart' :
                activeView === 'sutta' ? 'Sutta Chart' :
                activeView === 'mpsp' ? 'Motor SP Chart' :
                activeView === 'mpdp' ? 'Motor DP Chart' :
                activeView === 'sangam' ? 'Sangam Chart' :
-               activeView === 'chakwad' ? 'Chakwad Chart' : 'Cutting Panel'}
+               activeView === 'chakwad' ? 'Chakwad Chart' :
+               activeView === 'analysis' ? 'Panna P&L Analysis' : 'Cutting Panel'}
             </h1>
           </div>
           <div className="flex items-center space-x-4">

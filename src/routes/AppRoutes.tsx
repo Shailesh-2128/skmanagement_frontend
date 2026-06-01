@@ -32,6 +32,10 @@ import UsersPage from '../features/users/pages/UsersPage';
 import CollabPage from '../features/collab/pages/CollabPage';
 import CuttingPage from '../features/cutting/pages/CuttingPage';
 import SupportPage from '../features/support/pages/SupportPage';
+import SMSSettingsPage from '../features/sms/pages/SMSSettingsPage';
+import SMSTestPage from '../features/sms/pages/SMSTestPage';
+import SMSNotificationsPage from '../features/sms/pages/SMSNotificationsPage';
+
 
 export const AppRoutes: React.FC = () => {
   return (
@@ -67,6 +71,10 @@ export const AppRoutes: React.FC = () => {
             <Route path="/admin/users" element={<UsersPage />} />
             <Route path="/admin/support" element={<SupportPage />} />
             <Route path="/admin/accountant" element={<AccountantCalculatorPage />} />
+            <Route path="/admin/sms-settings" element={<SMSSettingsPage />} />
+            <Route path="/admin/sms-test" element={<SMSTestPage />} />
+            <Route path="/admin/sms-notifications" element={<SMSNotificationsPage />} />
+
           </Route>
         </Route>
 

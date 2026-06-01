@@ -29,7 +29,28 @@ export interface SaasTenant {
   groups_count: number;
   charts_count: number;
   transactions_count: number;
+  email?: string;
+  phone_number?: string;
+  billing_type: 'COMMISSION' | 'MONTHLY' | 'CUTTING_COMMISSION' | 'BOTH_COMMISSION';
+  monthly_amount: number;
+  commission_rate: number;
+  cutting_commission_rate: number;
+  total_sales: number;
+  calculated_revenue: number;
+  calculated_sales_revenue: number;
+  calculated_cutting_revenue: number;
+  sales_today: number;
+  sales_this_week: number;
+  sales_this_month: number;
+  revenue_today: number;
+  revenue_this_week: number;
+  revenue_this_month: number;
+  total_cutting: number;
+  cutting_today: number;
+  cutting_this_week: number;
+  cutting_this_month: number;
 }
+
 
 export interface LoginCredentials {
   username: string;
@@ -40,4 +61,15 @@ export interface LoginResponse {
   access: string;
   refresh: string;
   user: User;
+}
+
+export interface ActivityLog {
+  id: number;
+  tenant: number;
+  tenant_name: string;
+  username: string;
+  user_role: string;
+  action: 'CREATE' | 'UPDATE' | 'DELETE';
+  details: string;
+  timestamp: string;
 }
