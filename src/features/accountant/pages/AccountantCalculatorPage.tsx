@@ -17,28 +17,38 @@ export const AccountantCalculatorPage: React.FC = () => {
   const queryClient = useQueryClient();
   const { user } = useAuth();
 
+  // Helper to load draft values from localStorage
+  const getDraftValue = <T,>(key: string, defaultValue: T): T => {
+    try {
+      const saved = localStorage.getItem(`accountant_calc_${key}`);
+      return saved !== null ? JSON.parse(saved) : defaultValue;
+    } catch {
+      return defaultValue;
+    }
+  };
+
   // State Variables
-  const [selectedGroupId, setSelectedGroupId] = useState<string>('');
-  const [calculationDate, setCalculationDate] = useState<string>(new Date().toISOString().split('T')[0]);
-  const [commissionRate, setCommissionRate] = useState<string>('0');
-  const [mpAmount, setMpAmount] = useState<string>('0');
-  const [spending, setSpending] = useState<string>('0');
-  const [customFieldName, setCustomFieldName] = useState<string>('');
-  const [customFieldValue, setCustomFieldValue] = useState<string>('0');
-  const [customFieldType, setCustomFieldType] = useState<'add' | 'subtract'>('add');
+  const [selectedGroupId, setSelectedGroupId] = useState<string>(() => getDraftValue('selectedGroupId', ''));
+  const [calculationDate, setCalculationDate] = useState<string>(() => getDraftValue('calculationDate', new Date().toISOString().split('T')[0]));
+  const [commissionRate, setCommissionRate] = useState<string>(() => getDraftValue('commissionRate', '0'));
+  const [mpAmount, setMpAmount] = useState<string>(() => getDraftValue('mpAmount', '0'));
+  const [spending, setSpending] = useState<string>(() => getDraftValue('spending', '0'));
+  const [customFieldName, setCustomFieldName] = useState<string>(() => getDraftValue('customFieldName', ''));
+  const [customFieldValue, setCustomFieldValue] = useState<string>(() => getDraftValue('customFieldValue', '0'));
+  const [customFieldType, setCustomFieldType] = useState<'add' | 'subtract'>(() => getDraftValue('customFieldType', 'add'));
   
   // Custom Modals for Alerts & Successes
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   
   // Rows of entries
-  const [entries, setEntries] = useState<AccountantCalculationEntry[]>([
+  const [entries, setEntries] = useState<AccountantCalculationEntry[]>(() => getDraftValue('entries', [
     { sale: 0, win: 0 }
-  ]);
-  const [quickPasteText, setQuickPasteText] = useState<string>('');
+  ]));
+  const [quickPasteText, setQuickPasteText] = useState<string>(() => getDraftValue('quickPasteText', ''));
 
   // Calculation Result state
-  const [calculationResult, setCalculationResult] = useState<any>(null);
+  const [calculationResult, setCalculationResult] = useState<any>(() => getDraftValue('calculationResult', null));
 
   // History Detail Modal state
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
@@ -48,6 +58,42 @@ export const AccountantCalculatorPage: React.FC = () => {
   const [editingCalcId, setEditingCalcId] = useState<number | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const editIdParam = searchParams.get('edit');
+
+  const hasInitializedRef = React.useRef(false);
+
+  // Save draft to localStorage
+  useEffect(() => {
+    if (editingCalcId === null) {
+      try {
+        localStorage.setItem('accountant_calc_selectedGroupId', JSON.stringify(selectedGroupId));
+        localStorage.setItem('accountant_calc_calculationDate', JSON.stringify(calculationDate));
+        localStorage.setItem('accountant_calc_commissionRate', JSON.stringify(commissionRate));
+        localStorage.setItem('accountant_calc_mpAmount', JSON.stringify(mpAmount));
+        localStorage.setItem('accountant_calc_spending', JSON.stringify(spending));
+        localStorage.setItem('accountant_calc_customFieldName', JSON.stringify(customFieldName));
+        localStorage.setItem('accountant_calc_customFieldValue', JSON.stringify(customFieldValue));
+        localStorage.setItem('accountant_calc_customFieldType', JSON.stringify(customFieldType));
+        localStorage.setItem('accountant_calc_entries', JSON.stringify(entries));
+        localStorage.setItem('accountant_calc_quickPasteText', JSON.stringify(quickPasteText));
+        localStorage.setItem('accountant_calc_calculationResult', JSON.stringify(calculationResult));
+      } catch (err) {
+        console.error('Failed to save accountant calculator draft', err);
+      }
+    }
+  }, [
+    selectedGroupId,
+    calculationDate,
+    commissionRate,
+    mpAmount,
+    spending,
+    customFieldName,
+    customFieldValue,
+    customFieldType,
+    entries,
+    quickPasteText,
+    calculationResult,
+    editingCalcId
+  ]);
 
   // Load Groups
   const { data: groups, isLoading: groupsLoading } = useQuery({
@@ -78,6 +124,13 @@ export const AccountantCalculatorPage: React.FC = () => {
   }, [user, groups]);
 
   useEffect(() => {
+    if (!groups) return;
+
+    if (!hasInitializedRef.current) {
+      hasInitializedRef.current = true;
+      return;
+    }
+
     if (selectedGroupId && groups && !editIdParam) {
       const g = groups.find(group => group.id.toString() === selectedGroupId.toString());
       if (g) {
