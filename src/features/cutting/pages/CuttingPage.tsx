@@ -127,18 +127,23 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
 };
 
 // The 220 family combinations arranged column by column as shown in the paper image
-const COLUMNS = [
-  { header: '1', numbers: ['128', '137', '236', '678', '245', '290', '470', '579', '380', '335', '588', '489', '344', '399', '100', '155', '560', '146', '669', '119', '227', '777'] },
-  { header: '6', numbers: ['123', '268', '367', '178', '240', '259', '457', '790', '880', '330', '358', '448', '899', '349', '600', '556', '150', '114', '466', '169', '277', '222'] },
-  { header: '2', numbers: ['129', '147', '246', '679', '345', '390', '480', '589', '570', '255', '200', '138', '336', '688', '660', '110', '156', '778', '237', '228', '499', '444'] },
-  { header: '7', numbers: ['124', '179', '467', '269', '890', '458', '340', '359', '250', '557', '700', '368', '133', '188', '115', '566', '160', '278', '223', '377', '449', '999'] },
-  { header: '3', numbers: ['120', '157', '256', '670', '139', '148', '346', '689', '247', '779', '229', '445', '599', '490', '300', '580', '355', '337', '238', '788', '166', '111'] },
-  { header: '8', numbers: ['170', '567', '125', '260', '189', '468', '369', '134', '477', '279', '224', '459', '990', '440', '800', '558', '350', '378', '288', '233', '116', '666'] },
-  { header: '4', numbers: ['130', '158', '680', '356', '239', '248', '347', '789', '167', '112', '266', '149', '446', '699', '400', '455', '590', '220', '770', '257', '388', '333'] },
-  { header: '9', numbers: ['180', '568', '135', '360', '379', '478', '289', '234', '117', '126', '667', '144', '199', '469', '900', '559', '450', '225', '577', '270', '338', '888'] },
-  { header: '5', numbers: ['140', '159', '456', '690', '230', '258', '357', '780', '249', '799', '447', '348', '339', '889', '168', '113', '366', '122', '177', '267', '500', '555'] },
-  { header: '10', numbers: ['190', '569', '145', '460', '280', '235', '578', '370', '244', '299', '479', '334', '488', '389', '136', '668', '118', '677', '127', '226', '550', '000'] }
+const FAMILY_ROWS = [
+  { header: '1', numbers: ['128', '137', '146', '236', '245', '290', '380', '470', '489', '560', '579', '678', '100', '119', '155', '227', '335', '344', '399', '588', '669', '777'] },
+  { header: '2', numbers: ['129', '138', '147', '156', '237', '246', '345', '390', '480', '570', '589', '679', '110', '200', '228', '255', '336', '499', '660', '688', '778', '444'] },
+  { header: '3', numbers: ['120', '139', '148', '157', '238', '247', '256', '346', '490', '580', '670', '689', '166', '229', '300', '337', '355', '445', '599', '779', '788', '111'] },
+  { header: '4', numbers: ['130', '149', '158', '167', '239', '248', '257', '347', '356', '590', '680', '789', '112', '220', '266', '338', '400', '446', '455', '699', '770', '888'] },
+  { header: '5', numbers: ['140', '159', '168', '230', '249', '258', '267', '348', '357', '456', '690', '780', '113', '122', '177', '339', '366', '447', '500', '799', '889', '555'] },
+  { header: '6', numbers: ['123', '150', '169', '178', '240', '259', '268', '349', '358', '367', '457', '790', '114', '277', '330', '448', '466', '556', '600', '880', '899', '222'] },
+  { header: '7', numbers: ['124', '160', '179', '250', '269', '278', '340', '359', '368', '458', '467', '890', '115', '133', '188', '223', '377', '449', '557', '566', '700', '999'] },
+  { header: '8', numbers: ['125', '134', '170', '189', '260', '279', '350', '369', '378', '459', '468', '567', '116', '224', '233', '288', '440', '477', '558', '800', '990', '666'] },
+  { header: '9', numbers: ['126', '135', '180', '234', '270', '289', '360', '379', '450', '469', '478', '568', '117', '144', '199', '225', '388', '559', '577', '667', '900', '333'] },
+  { header: '0', numbers: ['127', '136', '145', '190', '235', '280', '370', '389', '460', '479', '569', '578', '118', '226', '244', '299', '334', '488', '550', '668', '677', '000'] }
 ];
+
+const COLUMNS = FAMILY_ROWS.map(row => ({
+  header: row.header === '0' ? '10' : row.header,
+  numbers: row.numbers
+}));
 
 // Flat list of all valid numbers for faster lookup
 const VALID_PANNAS = new Set(COLUMNS.flatMap(col => col.numbers));
@@ -241,8 +246,65 @@ const getSpDpPannasForDigit = (digitStr: string, type: 'sp' | 'dp'): string[] =>
   return column.numbers.filter(num => getPannaType(num) === targetType);
 };
 
+const getMotorMultiplier = (num: string, type: string): number => {
+  const cleanNum = num.replace(/\D/g, '');
+  const uniqueCount = new Set(cleanNum.split('')).size;
+  
+  if (type === 'mpsp') {
+    switch (uniqueCount) {
+      case 4: return 4;
+      case 5: return 10;
+      case 6: return 20;
+      case 7: return 35;
+      case 8: return 56;
+      case 9: return 84;
+      case 10: return 120;
+      default: return 1;
+    }
+  } else if (type === 'mpdp') {
+    switch (uniqueCount) {
+      case 4: return 12;
+      case 5: return 20;
+      case 6: return 30;
+      case 7: return 42;
+      case 8: return 56;
+      case 9: return 72;
+      case 10: return 90;
+      default: return 1;
+    }
+  }
+  return 1;
+};
+
+const getDisplayAmount = (key: string, storedAmount: number = 0): number => {
+  if (!storedAmount) return 0;
+  if (key.startsWith('CP_')) {
+    return storedAmount / 10;
+  }
+  if (key.startsWith('SPC_')) {
+    return storedAmount / 36;
+  }
+  if (key.startsWith('DPC_')) {
+    return storedAmount / 18;
+  }
+  if (key.startsWith('MPSP_')) {
+    const digits = key.replace('MPSP_', '');
+    const mult = getMotorMultiplier(digits, 'mpsp');
+    return mult > 0 ? storedAmount / mult : storedAmount;
+  }
+  if (key.startsWith('MPDP_')) {
+    const digits = key.replace('MPDP_', '');
+    const mult = getMotorMultiplier(digits, 'mpdp');
+    return mult > 0 ? storedAmount / mult : storedAmount;
+  }
+  return storedAmount;
+};
+
 const formatLogNumber = (num: string): string => {
   if (num.startsWith('SU')) return `Sutta-${num.substring(2)}`;
+  if (num.startsWith('CP_')) return `CP: ${num.replace('CP_', '')}`;
+  if (num.startsWith('SPC_')) return `SP Common: ${num.replace('SPC_', '')}`;
+  if (num.startsWith('DPC_')) return `DP Common: ${num.replace('DPC_', '')}`;
   if (num.startsWith('MPSP_')) return `Motor SP: ${num.replace('MPSP_', '')}`;
   if (num.startsWith('MPDP_')) return `Motor DP: ${num.replace('MPDP_', '')}`;
   if (num.startsWith('SGM_')) return `Sangam: ${num.replace('SGM_', '')}`;
@@ -269,6 +331,9 @@ const getChartTypeLabel = (type: string | undefined): string => {
     case 'sutta': return 'Sutta';
     case 'mpsp': return 'Motor SP';
     case 'mpdp': return 'Motor DP';
+    case 'cp': return 'CP Chart';
+    case 'spcommon': return 'SP Common';
+    case 'dpcommon': return 'DP Common';
     case 'sangam': return 'Sangam';
     case 'chakwad': return 'Chakwad';
     default: return type;
@@ -280,34 +345,65 @@ const renderPrintPannaTable = (chartAmounts: Record<string, number>, _chartLimit
   <table className="w-full text-center border-collapse border border-black">
     <thead>
       <tr className="bg-[#facc15] border-b border-black">
-        {COLUMNS.map((col) => (
-          <th key={col.header} className="py-2 px-1 border border-black text-[#1e3a8a] text-sm font-black w-[10%]">
-            {col.header}
+        <th className="py-2 px-1 border border-black text-[#1e3a8a] text-sm font-black w-[4%]">Dig</th>
+        {Array.from({ length: 12 }).map((_, c) => (
+          <th key={c} className="py-2 px-1 border border-black text-[#1e3a8a] text-sm font-black w-[4.36%]">
+            {c + 1}
+          </th>
+        ))}
+        {Array.from({ length: 10 }).map((_, c) => (
+          <th key={c} className="py-2 px-1 border border-black text-[#1e3a8a] text-sm font-black w-[4.36%]">
+            {c + 13}
           </th>
         ))}
       </tr>
     </thead>
     <tbody className="bg-yellow-50/30">
-      {Array.from({ length: 22 }).map((_, rowIndex) => (
-        <tr key={rowIndex} className="border-b border-black last:border-b-0">
-          {COLUMNS.map((col) => {
-            const num = col.numbers[rowIndex];
+      {FAMILY_ROWS.map((row) => (
+        <tr key={row.header} className="border-b border-black last:border-b-0">
+          <td className="bg-[#facc15] text-[#1e3a8a] py-2 px-1 border border-black align-middle font-black text-sm">
+            {row.header}
+          </td>
+          {row.numbers.slice(0, 12).map((num, idx) => {
             const amount = chartAmounts[num] || 0;
-            
             let cellBg = 'bg-[#fef08a] text-slate-900';
             if (amount > 0) {
               if (amount <= greenLimit) {
                 cellBg = 'bg-emerald-600 text-white font-bold';
               } else if (amount <= yellowLimit) {
-                cellBg = 'bg-amber-400 text-slate-900 font-bold';
+                cellBg = 'bg-white text-slate-900 font-bold';
               } else {
                 cellBg = 'bg-red-600 text-white red-cell font-bold';
               }
             }
-
+            const borderClass = idx === 11 ? 'border-r-4 border-double border-black' : 'border-r border-black';
             return (
               <td
-                key={col.header}
+                key={num}
+                className={`py-2 px-0.5 border border-black align-middle text-xs ${cellBg} ${borderClass}`}
+              >
+                <div className="flex flex-col items-center justify-center leading-none">
+                  <span className="font-extrabold">{num}</span>
+                  {amount > 0 && <span className="text-[9px] mt-0.5 font-bold">₹{amount}</span>}
+                </div>
+              </td>
+            );
+          })}
+          {row.numbers.slice(12).map((num) => {
+            const amount = chartAmounts[num] || 0;
+            let cellBg = 'bg-[#fef08a] text-slate-900';
+            if (amount > 0) {
+              if (amount <= greenLimit) {
+                cellBg = 'bg-emerald-600 text-white font-bold';
+              } else if (amount <= yellowLimit) {
+                cellBg = 'bg-white text-slate-900 font-bold';
+              } else {
+                cellBg = 'bg-red-600 text-white red-cell font-bold';
+              }
+            }
+            return (
+              <td
+                key={num}
                 className={`py-2 px-0.5 border border-black align-middle text-xs ${cellBg}`}
               >
                 <div className="flex flex-col items-center justify-center leading-none">
@@ -323,7 +419,7 @@ const renderPrintPannaTable = (chartAmounts: Record<string, number>, _chartLimit
   </table>
 );
 
-const renderPrintJodiTable = (chartAmounts: Record<string, number>, chartLimit: number, greenLimit: number = 200, yellowLimit: number = 500, showOnlyOverLimit: boolean = false) => (
+const renderPrintJodiTable = (chartAmounts: Record<string, number>, chartLimit: number, greenLimit: number = 200, yellowLimit: number = 500, showOnlyOverLimit: boolean = false, isCp: boolean = false) => (
   <table className="w-full text-center border-collapse border border-black">
     <thead>
       <tr className="bg-[#facc15] border-b border-black">
@@ -345,7 +441,9 @@ const renderPrintJodiTable = (chartAmounts: Record<string, number>, chartLimit: 
           </td>
           {Array.from({ length: 10 }).map((_, c) => {
             const num = `${r}${c}`;
-            const amount = chartAmounts[num] || 0;
+            const numKey = isCp ? `CP_${num}` : num;
+            const amount = chartAmounts[numKey] || 0;
+            const displayAmount = getDisplayAmount(numKey, amount);
             const isOverLimit = amount > chartLimit;
             
             let cellBg = 'bg-[#fef08a] text-slate-900';
@@ -353,7 +451,7 @@ const renderPrintJodiTable = (chartAmounts: Record<string, number>, chartLimit: 
               if (amount <= greenLimit) {
                 cellBg = 'bg-emerald-600 text-white font-bold';
               } else if (amount <= yellowLimit) {
-                cellBg = 'bg-amber-400 text-slate-900 font-bold';
+                cellBg = 'bg-white text-slate-900 font-bold';
               } else {
                 cellBg = 'bg-red-600 text-white red-cell font-bold';
               }
@@ -370,7 +468,7 @@ const renderPrintJodiTable = (chartAmounts: Record<string, number>, chartLimit: 
                 {(!showOnlyOverLimit || isOverLimit) ? (
                   <div className="flex flex-col items-center justify-center leading-none">
                     <span className="font-extrabold">{num}</span>
-                    {amount > 0 && <span className="text-[9px] mt-0.5 font-bold">₹{amount}</span>}
+                    {amount > 0 && <span className="text-[9px] mt-0.5 font-bold">₹{displayAmount}</span>}
                   </div>
                 ) : (
                   <div className="h-4" />
@@ -384,72 +482,84 @@ const renderPrintJodiTable = (chartAmounts: Record<string, number>, chartLimit: 
   </table>
 );
 
-const renderPrintSuttaTable = (chartAmounts: Record<string, number>, chartLimit: number, greenLimit: number = 200, yellowLimit: number = 500, showOnlyOverLimit: boolean = false) => (
-  <table className="w-full text-center border-collapse border border-black">
-    <thead>
-      <tr className="bg-[#facc15]">
-        {Array.from({ length: 10 }).map((_, digit) => (
-          <th key={digit} className="py-2 px-1 border border-black text-[#1e3a8a] text-sm font-black">
-            {digit}
-          </th>
-        ))}
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        {Array.from({ length: 10 }).map((_, digit) => {
-          const numKey = `SU${digit}`;
-          const amount = chartAmounts[numKey] || 0;
-          const isOverLimit = amount > chartLimit;
-          
-          let cellBg = 'bg-[#fef08a]';
-          if (amount > 0) {
-            if (amount <= greenLimit) {
-              cellBg = 'bg-emerald-600 text-white font-bold';
-            } else if (amount <= yellowLimit) {
-              cellBg = 'bg-amber-400 text-slate-900 font-bold';
-            } else {
-              cellBg = 'bg-red-600 text-white red-cell font-bold';
+const renderPrintSuttaTable = (
+  chartAmounts: Record<string, number>,
+  chartLimit: number,
+  greenLimit: number = 200,
+  yellowLimit: number = 500,
+  showOnlyOverLimit: boolean = false,
+  isSpCommon: boolean = false,
+  isDpCommon: boolean = false
+) => {
+  const prefix = isSpCommon ? 'SPC_' : isDpCommon ? 'DPC_' : 'SU';
+  return (
+    <table className="w-full text-center border-collapse border border-black">
+      <thead>
+        <tr className="bg-[#facc15]">
+          {Array.from({ length: 10 }).map((_, digit) => (
+            <th key={digit} className="py-2 px-1 border border-black text-[#1e3a8a] text-sm font-black">
+              {digit}
+            </th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          {Array.from({ length: 10 }).map((_, digit) => {
+            const numKey = `${prefix}${digit}`;
+            const amount = chartAmounts[numKey] || 0;
+            const displayAmount = getDisplayAmount(numKey, amount);
+            const isOverLimit = amount > chartLimit;
+            
+            let cellBg = 'bg-[#fef08a]';
+            if (amount > 0) {
+              if (amount <= greenLimit) {
+                cellBg = 'bg-emerald-600 text-white font-bold';
+              } else if (amount <= yellowLimit) {
+                cellBg = 'bg-white text-slate-900 font-bold';
+              } else {
+                cellBg = 'bg-red-600 text-white red-cell font-bold';
+              }
             }
-          }
-          if (showOnlyOverLimit && !isOverLimit) {
-            cellBg = 'bg-white text-transparent border border-black';
-          }
+            if (showOnlyOverLimit && !isOverLimit) {
+              cellBg = 'bg-white text-transparent border border-black';
+            }
 
-          return (
-            <td 
-              key={digit} 
-              className={`py-2.5 px-1 border border-black font-extrabold text-sm ${cellBg}`}
-            >
-              {(!showOnlyOverLimit || isOverLimit) ? (
-                <div>
-                  <div>{digit}</div>
-                  {amount > 0 && <div className="text-[10px] mt-1 font-bold">₹{amount}</div>}
-                </div>
-              ) : (
-                <div className="h-6" />
-              )}
-            </td>
-          );
-        })}
-      </tr>
-    </tbody>
-  </table>
-);
+            return (
+              <td 
+                key={digit} 
+                className={`py-2.5 px-1 border border-black font-extrabold text-sm ${cellBg}`}
+              >
+                {(!showOnlyOverLimit || isOverLimit) ? (
+                  <div>
+                    <div>{digit}</div>
+                    {amount > 0 && <div className="text-[10px] mt-1 font-bold">₹{displayAmount}</div>}
+                  </div>
+                ) : (
+                  <div className="h-6" />
+                )}
+              </td>
+            );
+          })}
+        </tr>
+      </tbody>
+    </table>
+  );
+};
 
 const renderPrintListTable = (chartType: string, chartAmounts: Record<string, number>, chartLimit: number, greenLimit: number = 200, yellowLimit: number = 500, showOnlyOverLimit: boolean = false) => {
-  const list: { displayKey: string; amount: number; type: string }[] = [];
+  const list: { displayKey: string; amount: number; displayAmount: number; type: string }[] = [];
   Object.entries(chartAmounts).forEach(([key, val]) => {
     if (typeof val !== 'number' || val <= 0) return;
     if (showOnlyOverLimit && val <= chartLimit) return;
     if (chartType === 'mpsp' && key.startsWith('MPSP_')) {
-      list.push({ displayKey: key.replace('MPSP_', ''), amount: val, type: 'Motor Single Pana' });
+      list.push({ displayKey: key.replace('MPSP_', ''), amount: val, displayAmount: getDisplayAmount(key, val), type: 'Motor Single Pana' });
     } else if (chartType === 'mpdp' && key.startsWith('MPDP_')) {
-      list.push({ displayKey: key.replace('MPDP_', ''), amount: val, type: 'Motor Double Pana' });
+      list.push({ displayKey: key.replace('MPDP_', ''), amount: val, displayAmount: getDisplayAmount(key, val), type: 'Motor Double Pana' });
     } else if (chartType === 'sangam' && key.startsWith('SGM_')) {
-      list.push({ displayKey: key.replace('SGM_', ''), amount: val, type: 'Sangam' });
+      list.push({ displayKey: key.replace('SGM_', ''), amount: val, displayAmount: getDisplayAmount(key, val), type: 'Sangam' });
     } else if (chartType === 'chakwad' && key.startsWith('CHK_')) {
-      list.push({ displayKey: key.replace('CHK_', ''), amount: val, type: 'Chakwad' });
+      list.push({ displayKey: key.replace('CHK_', ''), amount: val, displayAmount: getDisplayAmount(key, val), type: 'Chakwad' });
     }
   });
 
@@ -477,7 +587,7 @@ const renderPrintListTable = (chartType: string, chartAmounts: Record<string, nu
             if (entry.amount <= greenLimit) {
               rowBg = 'bg-emerald-50';
             } else if (entry.amount <= yellowLimit) {
-              rowBg = 'bg-amber-50';
+              rowBg = 'bg-white';
             } else {
               rowBg = 'bg-red-200';
             }
@@ -487,7 +597,7 @@ const renderPrintListTable = (chartType: string, chartAmounts: Record<string, nu
             <tr key={entry.displayKey} className={rowBg}>
               <td className="py-2 px-4 border border-black font-extrabold text-sm">{entry.displayKey}</td>
               <td className="py-2 px-4 border border-black">{entry.type}</td>
-              <td className="py-2 px-4 border border-black text-right font-black">₹{entry.amount}</td>
+              <td className="py-2 px-4 border border-black text-right font-black">₹{entry.displayAmount}</td>
               <td className="py-2 px-4 border border-black text-right">
                 {percent}% {isOverLimit ? '(Over Limit!)' : ''}
               </td>
@@ -504,7 +614,8 @@ export const CuttingPage: React.FC = () => {
   const { isSuperAdmin, user } = useAuth();
   
   const [searchParams, setSearchParams] = useSearchParams();
-  const activeView = (searchParams.get('view') || 'panna') as 'panna' | 'jodi' | 'sutta' | 'mpsp' | 'mpdp' | 'sangam' | 'chakwad' | 'add-cutting' | 'analysis';
+  const activeView = (searchParams.get('view') || 'panna') as 'panna' | 'jodi' | 'sutta' | 'mpsp' | 'mpdp' | 'sangam' | 'chakwad' | 'cp' | 'spcommon' | 'dpcommon' | 'add-cutting' | 'analysis' | 'jodi-analysis' | 'sutta-analysis' | 'overall-analysis';
+  const isAnalysisView = activeView === 'analysis' || activeView === 'jodi-analysis' || activeView === 'sutta-analysis' || activeView === 'overall-analysis';
 
   // Local helper to get current local date string (YYYY-MM-DD)
   const getLocalDateString = (date: Date = new Date()) => {
@@ -696,29 +807,54 @@ export const CuttingPage: React.FC = () => {
     queryKey: ['cuttingChart', selectedGroupId, selectedDate, activeView, selectedSession, selectedChartName],
     queryFn: async () => {
       if (selectedGroupId === null || !selectedChartName) return null;
-      const queryType = activeView === 'analysis' ? 'panna' : activeView;
+      let queryType: string = activeView;
+      if (activeView === 'analysis') {
+        queryType = 'panna';
+      } else if (activeView === 'jodi-analysis') {
+        queryType = 'jodi';
+      } else if (activeView === 'sutta-analysis') {
+        queryType = 'sutta';
+      } else if (activeView === 'overall-analysis') {
+        queryType = 'panna';
+      }
       return cuttingApi.getOrCreateChart(selectedGroupId, selectedDate, queryType, selectedSession, selectedChartName);
     },
     enabled: selectedGroupId !== null && !!selectedDate && !!activeView && !!selectedSession && !!selectedChartName && activeView !== 'add-cutting'
   });
 
-  // Analysis payout configurations (per 10 INR)
+  // --- Fetch All Charts for Overall P&L Analysis ---
+  const { data: allDashboardCharts, isLoading: isAllChartsLoading } = useQuery<CuttingChartData[]>({
+    queryKey: ['cuttingChartsAllTypes', selectedGroupId, selectedDate, selectedSession, selectedChartName],
+    queryFn: () => cuttingApi.getAllTypes(selectedGroupId!, selectedDate, selectedSession, selectedChartName),
+    enabled: selectedGroupId !== null && !!selectedDate && !!selectedSession && !!selectedChartName && activeView !== 'add-cutting'
+  });
+
+  const overallTotalVolume = allDashboardCharts
+    ? allDashboardCharts.reduce((sum, chart) => {
+        return sum + Object.values(chart.amounts || {}).reduce((s, val) => s + (val || 0), 0);
+      }, 0)
+    : 0;
+
   const [spPayout, setSpPayout] = useState(1500);
   const [dpPayout, setDpPayout] = useState(3000);
   const [tpPayout, setTpPayout] = useState(10000);
+  const [jodiPayout, setJodiPayout] = useState(900);
+  const [suttaPayout, setSuttaPayout] = useState(90);
 
   // Custom analysis Total Volume (to override totalCuttingVolume for testing/what-if)
   const [analysisTotalVolumeInput, setAnalysisTotalVolumeInput] = useState('');
   const [isTotalVolumeOverridden, setIsTotalVolumeOverridden] = useState(false);
+  const [analysisFilter, setAnalysisFilter] = useState('all');
 
   const analysisAmounts = activeChart?.amounts || {};
   const actualTotalCuttingVolume = Object.values(analysisAmounts).reduce((sum, val) => sum + (val || 0), 0);
+  const displayTotalVolume = activeView === 'overall-analysis' ? overallTotalVolume : actualTotalCuttingVolume;
 
   useEffect(() => {
     if (!isTotalVolumeOverridden) {
-      setAnalysisTotalVolumeInput(actualTotalCuttingVolume.toString());
+      setAnalysisTotalVolumeInput(displayTotalVolume.toString());
     }
-  }, [actualTotalCuttingVolume, isTotalVolumeOverridden]);
+  }, [displayTotalVolume, isTotalVolumeOverridden]);
 
   // Invalidate chart names list query whenever the active chart name changes
   useEffect(() => {
@@ -865,17 +1001,17 @@ export const CuttingPage: React.FC = () => {
     const yellowLimit = targetChart.yellow_limit ?? 500;
     const redLimit = chartLimit;
 
-    const list: { key: string; displayKey: string; amount: number; type: string }[] = [];
+    const list: { key: string; displayKey: string; amount: number; displayAmount: number; type: string }[] = [];
     Object.entries(chartAmounts).forEach(([key, val]) => {
       if (typeof val !== 'number' || val <= 0) return;
       if (key.startsWith('MPSP_')) {
-        list.push({ key, displayKey: key.replace('MPSP_', ''), amount: val, type: 'Motor Single Pana (MPSP)' });
+        list.push({ key, displayKey: key.replace('MPSP_', ''), amount: val, displayAmount: getDisplayAmount(key, val), type: 'Motor Single Pana (MPSP)' });
       } else if (key.startsWith('MPDP_')) {
-        list.push({ key, displayKey: key.replace('MPDP_', ''), amount: val, type: 'Motor Double Pana (MPDP)' });
+        list.push({ key, displayKey: key.replace('MPDP_', ''), amount: val, displayAmount: getDisplayAmount(key, val), type: 'Motor Double Pana (MPDP)' });
       } else if (key.startsWith('SGM_')) {
-        list.push({ key, displayKey: key.replace('SGM_', ''), amount: val, type: 'Sangam' });
+        list.push({ key, displayKey: key.replace('SGM_', ''), amount: val, displayAmount: getDisplayAmount(key, val), type: 'Sangam' });
       } else if (key.startsWith('CHK_')) {
-        list.push({ key, displayKey: key.replace('CHK_', ''), amount: val, type: 'Chakwad' });
+        list.push({ key, displayKey: key.replace('CHK_', ''), amount: val, displayAmount: getDisplayAmount(key, val), type: 'Chakwad' });
       }
     });
 
@@ -899,24 +1035,29 @@ export const CuttingPage: React.FC = () => {
 
             {/* Grid Scrollable Wrapper */}
             <div className="overflow-x-auto w-full">
-              <table className="w-full text-center border-collapse select-none">
+              <table className="w-full text-center border-collapse select-none border border-black table-fixed min-w-[1200px]">
                 <thead>
-                  <tr className="bg-[#facc15] border-b border-black">
-                    {COLUMNS.map((col) => (
-                      <th
-                        key={col.header}
-                        className="py-2.5 px-1 border-r border-black last:border-r-0 text-[#1e3a8a] text-lg font-black tracking-wider w-[10%]"
-                      >
-                        {col.header}
+                  <tr className="bg-[#facc15] border-b-2 border-black text-[#1e3a8a] font-black text-sm">
+                    <th className="py-2 px-1 border-r border-black w-[4%]">Dig</th>
+                    {Array.from({ length: 12 }).map((_, c) => (
+                      <th key={c} className="py-2 px-1 border-r border-black w-[4.36%]">
+                        {c + 1}
+                      </th>
+                    ))}
+                    {Array.from({ length: 10 }).map((_, c) => (
+                      <th key={c} className="py-2 px-1 border-r border-black last:border-r-0 w-[4.36%]">
+                        {c + 13}
                       </th>
                     ))}
                   </tr>
                 </thead>
                 <tbody className="bg-yellow-50/30">
-                  {Array.from({ length: 22 }).map((_, rowIndex) => (
-                    <tr key={rowIndex} className="border-b border-black last:border-b-0">
-                      {COLUMNS.map((col) => {
-                        const num = col.numbers[rowIndex];
+                  {FAMILY_ROWS.map((row) => (
+                    <tr key={row.header} className="border-b border-black last:border-b-0">
+                      <td className="bg-[#facc15] text-[#1e3a8a] py-3 px-1 border-r-2 border-black align-middle font-black text-base">
+                        {row.header}
+                      </td>
+                      {row.numbers.slice(0, 12).map((num, idx) => {
                         const amount = chartAmounts[num] || 0;
                         const isOverLimit = amount > redLimit;
                         const isHighlighted = searchQuery === num;
@@ -926,7 +1067,53 @@ export const CuttingPage: React.FC = () => {
                           if (amount <= greenLimit) {
                             cellColorClass = 'bg-emerald-600 text-white hover:bg-emerald-700 font-bold';
                           } else if (amount <= yellowLimit) {
-                            cellColorClass = 'bg-amber-500 text-slate-900 hover:bg-amber-600 font-bold';
+                            cellColorClass = 'bg-white text-slate-900 hover:bg-slate-100 font-bold';
+                          } else {
+                            cellColorClass = 'bg-red-600 text-white hover:bg-red-700 red-cell font-bold';
+                          }
+                        }
+                        if (isHighlighted) {
+                          cellColorClass = 'bg-blue-200 text-slate-900 border-2 border-blue-500 font-extrabold scale-[1.02] z-10';
+                        }
+
+                        const borderClass = idx === 11 ? 'border-r-4 border-double border-black' : 'border-r border-black';
+
+                        return (
+                          <td
+                            key={num}
+                            onClick={() => handleCellClick(num)}
+                            className={`py-3 px-0.5 align-middle cursor-pointer transition-all duration-150 relative ${cellColorClass} ${borderClass} ${
+                              highlightOverLimitOnly && !isOverLimit ? 'opacity-15 blur-[0.2px] grayscale transition-opacity duration-200' : ''
+                            }`}
+                          >
+                            <div className="flex flex-col items-center justify-center leading-tight">
+                              <span className="font-extrabold text-sm md:text-base tracking-wide">
+                                {num}
+                              </span>
+                              {amount > 0 && (
+                                <span className={`text-[10px] md:text-xs font-bold mt-1 px-1 rounded-sm ${
+                                  amount <= greenLimit ? 'bg-white/20 text-white shadow-sm' :
+                                  amount <= yellowLimit ? 'bg-black/10 text-slate-900 shadow-sm' :
+                                  'bg-white text-red-700 shadow-sm'
+                                }`}>
+                                  ₹{amount}
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                        );
+                      })}
+                      {row.numbers.slice(12).map((num) => {
+                        const amount = chartAmounts[num] || 0;
+                        const isOverLimit = amount > redLimit;
+                        const isHighlighted = searchQuery === num;
+
+                        let cellColorClass = 'bg-[#fef08a] text-slate-900 hover:bg-yellow-200/80';
+                        if (amount > 0) {
+                          if (amount <= greenLimit) {
+                            cellColorClass = 'bg-emerald-600 text-white hover:bg-emerald-700 font-bold';
+                          } else if (amount <= yellowLimit) {
+                            cellColorClass = 'bg-white text-slate-900 hover:bg-slate-100 font-bold';
                           } else {
                             cellColorClass = 'bg-red-600 text-white hover:bg-red-700 red-cell font-bold';
                           }
@@ -937,7 +1124,7 @@ export const CuttingPage: React.FC = () => {
 
                         return (
                           <td
-                            key={col.header}
+                            key={num}
                             onClick={() => handleCellClick(num)}
                             className={`py-3 px-0.5 border-r border-black last:border-r-0 align-middle cursor-pointer transition-all duration-150 relative ${cellColorClass} ${
                               highlightOverLimitOnly && !isOverLimit ? 'opacity-15 blur-[0.2px] grayscale transition-opacity duration-200' : ''
@@ -968,56 +1155,363 @@ export const CuttingPage: React.FC = () => {
           </div>
         )}
 
-        {/* Analysis View (Panna Profit & Loss) */}
-        {targetView === 'analysis' && (() => {
+        {(targetView === 'analysis' || targetView === 'jodi-analysis' || targetView === 'sutta-analysis' || targetView === 'overall-analysis') && (() => {
           const totalVolumeThreshold = isTotalVolumeOverridden 
             ? (parseFloat(analysisTotalVolumeInput) || 0) 
-            : totalCuttingVolume;
+            : (targetView === 'overall-analysis' ? overallTotalVolume : totalCuttingVolume);
 
           const activePannas: {
             num: string;
             amount: number;
-            type: 'SP' | 'DP' | 'TP';
+            type: string;
             multiplier: number;
             winningAmount: number;
             ratioPercent: number;
           }[] = [];
 
-          // Walk through all COLUMNS flat numbers
-          COLUMNS.flatMap(col => col.numbers).forEach(num => {
-            const amount = chartAmounts[num] || 0;
-            if (amount > 0) {
-              const pannaType = getPannaType(num);
-              let multiplier = 0;
-              if (pannaType === 'SP') multiplier = spPayout / 10;
-              else if (pannaType === 'DP') multiplier = dpPayout / 10;
-              else multiplier = tpPayout / 10;
+          if (targetView === 'analysis') {
+            // Walk through all COLUMNS flat numbers
+            COLUMNS.flatMap(col => col.numbers).forEach(num => {
+              const amount = chartAmounts[num] || 0;
+              if (amount > 0) {
+                const pannaType = getPannaType(num);
+                let multiplier = 0;
+                if (pannaType === 'SP') multiplier = spPayout / 10;
+                else if (pannaType === 'DP') multiplier = dpPayout / 10;
+                else multiplier = tpPayout / 10;
 
-              const winningAmount = amount * multiplier;
-              const ratioPercent = totalVolumeThreshold > 0 
-                ? Math.round((winningAmount / totalVolumeThreshold) * 100) 
-                : winningAmount > 0 ? 100 : 0;
+                const winningAmount = amount * multiplier;
+                const ratioPercent = totalVolumeThreshold > 0 
+                  ? Math.round((winningAmount / totalVolumeThreshold) * 100) 
+                  : winningAmount > 0 ? 100 : 0;
 
-              activePannas.push({
-                num,
-                amount,
-                type: pannaType,
-                multiplier,
-                winningAmount,
-                ratioPercent
+                activePannas.push({
+                  num,
+                  amount,
+                  type: pannaType,
+                  multiplier,
+                  winningAmount,
+                  ratioPercent
+                });
+              }
+            });
+          } else if (targetView === 'jodi-analysis') {
+            // Walk through all Jodi combinations (00 to 99)
+            for (let i = 0; i < 100; i++) {
+              const num = i.toString().padStart(2, '0');
+              const amount = chartAmounts[num] || 0;
+              if (amount > 0) {
+                const multiplier = jodiPayout / 10;
+                const winningAmount = amount * multiplier;
+                const ratioPercent = totalVolumeThreshold > 0 
+                  ? Math.round((winningAmount / totalVolumeThreshold) * 100) 
+                  : winningAmount > 0 ? 100 : 0;
+
+                activePannas.push({
+                  num,
+                  amount,
+                  type: 'Jodi',
+                  multiplier,
+                  winningAmount,
+                  ratioPercent
+                });
+              }
+            }
+          } else if (targetView === 'sutta-analysis') {
+            // Walk through all Sutta digits (SU0 to SU9)
+            for (let i = 0; i < 10; i++) {
+              const num = `SU${i}`;
+              const amount = chartAmounts[num] || 0;
+              if (amount > 0) {
+                const multiplier = suttaPayout / 10;
+                const winningAmount = amount * multiplier;
+                const ratioPercent = totalVolumeThreshold > 0 
+                  ? Math.round((winningAmount / totalVolumeThreshold) * 100) 
+                  : winningAmount > 0 ? 100 : 0;
+
+                activePannas.push({
+                  num,
+                  amount,
+                  type: 'Sutta',
+                  multiplier,
+                  winningAmount,
+                  ratioPercent
+                });
+              }
+            }
+          } else if (targetView === 'overall-analysis') {
+            if (allDashboardCharts) {
+              allDashboardCharts.forEach(chart => {
+                const chartAmounts = chart.amounts || {};
+                if (chart.chart_type === 'panna') {
+                  COLUMNS.flatMap(col => col.numbers).forEach(num => {
+                    const amount = chartAmounts[num] || 0;
+                    if (amount > 0) {
+                      const pannaType = getPannaType(num);
+                      let multiplier = 0;
+                      if (pannaType === 'SP') multiplier = spPayout / 10;
+                      else if (pannaType === 'DP') multiplier = dpPayout / 10;
+                      else multiplier = tpPayout / 10;
+
+                      const winningAmount = amount * multiplier;
+                      const ratioPercent = totalVolumeThreshold > 0 
+                        ? Math.round((winningAmount / totalVolumeThreshold) * 100) 
+                        : winningAmount > 0 ? 100 : 0;
+
+                      activePannas.push({
+                        num,
+                        amount,
+                        type: pannaType,
+                        multiplier,
+                        winningAmount,
+                        ratioPercent
+                      });
+                    }
+                  });
+                } else if (chart.chart_type === 'jodi') {
+                  for (let i = 0; i < 100; i++) {
+                    const num = i.toString().padStart(2, '0');
+                    const amount = chartAmounts[num] || 0;
+                    if (amount > 0) {
+                      const multiplier = jodiPayout / 10;
+                      const winningAmount = amount * multiplier;
+                      const ratioPercent = totalVolumeThreshold > 0 
+                        ? Math.round((winningAmount / totalVolumeThreshold) * 100) 
+                        : winningAmount > 0 ? 100 : 0;
+
+                      activePannas.push({
+                        num,
+                        amount,
+                        type: 'Jodi',
+                        multiplier,
+                        winningAmount,
+                        ratioPercent
+                      });
+                    }
+                  }
+                } else if (chart.chart_type === 'sutta') {
+                  for (let i = 0; i < 10; i++) {
+                    const num = `SU${i}`;
+                    const amount = chartAmounts[num] || 0;
+                    if (amount > 0) {
+                      const multiplier = suttaPayout / 10;
+                      const winningAmount = amount * multiplier;
+                      const ratioPercent = totalVolumeThreshold > 0 
+                        ? Math.round((winningAmount / totalVolumeThreshold) * 100) 
+                        : winningAmount > 0 ? 100 : 0;
+
+                      activePannas.push({
+                        num,
+                        amount,
+                        type: 'Sutta',
+                        multiplier,
+                        winningAmount,
+                        ratioPercent
+                      });
+                    }
+                  }
+                } else if (chart.chart_type === 'mpsp') {
+                  Object.entries(chartAmounts).forEach(([key, val]) => {
+                    if (typeof val === 'number' && val > 0) {
+                      const multiplier = spPayout / 10;
+                      const winningAmount = val * multiplier;
+                      const ratioPercent = totalVolumeThreshold > 0 
+                        ? Math.round((winningAmount / totalVolumeThreshold) * 100) 
+                        : winningAmount > 0 ? 100 : 0;
+                      activePannas.push({
+                        num: key,
+                        amount: val,
+                        type: 'SP',
+                        multiplier,
+                        winningAmount,
+                        ratioPercent
+                      });
+                    }
+                  });
+                } else if (chart.chart_type === 'mpdp') {
+                  Object.entries(chartAmounts).forEach(([key, val]) => {
+                    if (typeof val === 'number' && val > 0) {
+                      const multiplier = dpPayout / 10;
+                      const winningAmount = val * multiplier;
+                      const ratioPercent = totalVolumeThreshold > 0 
+                        ? Math.round((winningAmount / totalVolumeThreshold) * 100) 
+                        : winningAmount > 0 ? 100 : 0;
+                      activePannas.push({
+                        num: key,
+                        amount: val,
+                        type: 'DP',
+                        multiplier,
+                        winningAmount,
+                        ratioPercent
+                      });
+                    }
+                  });
+                } else if (chart.chart_type === 'sangam') {
+                  Object.entries(chartAmounts).forEach(([key, val]) => {
+                    if (typeof val === 'number' && val > 0) {
+                      const multiplier = 1500;
+                      const winningAmount = val * multiplier;
+                      const ratioPercent = totalVolumeThreshold > 0 
+                        ? Math.round((winningAmount / totalVolumeThreshold) * 100) 
+                        : winningAmount > 0 ? 100 : 0;
+                      activePannas.push({
+                        num: key,
+                        amount: val,
+                        type: 'Sangam',
+                        multiplier,
+                        winningAmount,
+                        ratioPercent
+                      });
+                    }
+                  });
+                } else if (chart.chart_type === 'chakwad') {
+                  Object.entries(chartAmounts).forEach(([key, val]) => {
+                    if (typeof val === 'number' && val > 0) {
+                      const multiplier = 450;
+                      const winningAmount = val * multiplier;
+                      const ratioPercent = totalVolumeThreshold > 0 
+                        ? Math.round((winningAmount / totalVolumeThreshold) * 100) 
+                        : winningAmount > 0 ? 100 : 0;
+                      activePannas.push({
+                        num: key,
+                        amount: val,
+                        type: 'Chakwad',
+                        multiplier,
+                        winningAmount,
+                        ratioPercent
+                      });
+                    }
+                  });
+                } else if (chart.chart_type === 'cp') {
+                  for (let i = 0; i < 100; i++) {
+                    const num = i.toString().padStart(2, '0');
+                    const numKey = `CP_${num}`;
+                    const amount = chartAmounts[numKey] || 0;
+                    if (amount > 0) {
+                      const multiplier = spPayout / 100;
+                      const winningAmount = amount * multiplier;
+                      const ratioPercent = totalVolumeThreshold > 0 
+                        ? Math.round((winningAmount / totalVolumeThreshold) * 100) 
+                        : winningAmount > 0 ? 100 : 0;
+
+                      activePannas.push({
+                        num: numKey,
+                        amount,
+                        type: 'CP',
+                        multiplier,
+                        winningAmount,
+                        ratioPercent
+                      });
+                    }
+                  }
+                } else if (chart.chart_type === 'spcommon') {
+                  for (let i = 0; i < 10; i++) {
+                    const numKey = `SPC_${i}`;
+                    const amount = chartAmounts[numKey] || 0;
+                    if (amount > 0) {
+                      const multiplier = (spPayout / 10) / 36;
+                      const winningAmount = amount * multiplier;
+                      const ratioPercent = totalVolumeThreshold > 0 
+                        ? Math.round((winningAmount / totalVolumeThreshold) * 100) 
+                        : winningAmount > 0 ? 100 : 0;
+
+                      activePannas.push({
+                        num: numKey,
+                        amount,
+                        type: 'SP Common',
+                        multiplier,
+                        winningAmount,
+                        ratioPercent
+                      });
+                    }
+                  }
+                } else if (chart.chart_type === 'dpcommon') {
+                  for (let i = 0; i < 10; i++) {
+                    const numKey = `DPC_${i}`;
+                    const amount = chartAmounts[numKey] || 0;
+                    if (amount > 0) {
+                      const multiplier = (dpPayout / 10) / 18;
+                      const winningAmount = amount * multiplier;
+                      const ratioPercent = totalVolumeThreshold > 0 
+                        ? Math.round((winningAmount / totalVolumeThreshold) * 100) 
+                        : winningAmount > 0 ? 100 : 0;
+
+                      activePannas.push({
+                        num: numKey,
+                        amount,
+                        type: 'DP Common',
+                        multiplier,
+                        winningAmount,
+                        ratioPercent
+                      });
+                    }
+                  }
+                }
               });
             }
+          }
+
+          const filteredActivePannas = activePannas.filter(p => {
+            if (analysisFilter === 'all') return true;
+            if (analysisFilter === 'panna') {
+              return (p.type === 'SP' || p.type === 'DP' || p.type === 'TP') && !p.num.startsWith('MPSP_') && !p.num.startsWith('MPDP_');
+            }
+            if (analysisFilter === 'jodi') return p.type === 'Jodi';
+            if (analysisFilter === 'sutta') return p.type === 'Sutta';
+            if (analysisFilter === 'cp') return p.type === 'CP';
+            if (analysisFilter === 'spcommon') return p.type === 'SP Common';
+            if (analysisFilter === 'dpcommon') return p.type === 'DP Common';
+            if (analysisFilter === 'motor') return p.num.startsWith('MPSP_') || p.num.startsWith('MPDP_');
+            if (analysisFilter === 'sangam') return p.type === 'Sangam';
+            if (analysisFilter === 'chakwad') return p.type === 'Chakwad';
+            return true;
           });
 
           // Classify into three lists
-          const overLimitList = activePannas.filter(p => p.winningAmount > totalVolumeThreshold);
-          const cutToCutList = activePannas.filter(p => p.winningAmount >= totalVolumeThreshold * 0.8 && p.winningAmount <= totalVolumeThreshold);
-          const greenList = activePannas.filter(p => p.winningAmount < totalVolumeThreshold * 0.8);
+          const overLimitList = filteredActivePannas.filter(p => p.winningAmount > totalVolumeThreshold);
+          const cutToCutList = filteredActivePannas.filter(p => p.winningAmount >= totalVolumeThreshold * 0.8 && p.winningAmount <= totalVolumeThreshold);
+          const greenList = filteredActivePannas.filter(p => p.winningAmount < totalVolumeThreshold * 0.8);
 
           // Sort each list by Winning Payout descending
           const sortedOverLimit = [...overLimitList].sort((a, b) => b.winningAmount - a.winningAmount);
           const sortedCutToCut = [...cutToCutList].sort((a, b) => b.winningAmount - a.winningAmount);
           const sortedGreen = [...greenList].sort((a, b) => b.winningAmount - a.winningAmount);
+
+          // Calculate how much needs to be cut for each over-limit bet
+          const pannasToCut = sortedOverLimit.map(p => {
+            const maxAllowable = p.multiplier > 0 ? Math.floor(totalVolumeThreshold / p.multiplier) : 0;
+            const amountToCut = Math.max(0, p.amount - maxAllowable);
+            return {
+              ...p,
+              amountToCut
+            };
+          }).filter(p => p.amountToCut > 0);
+
+          // Calculate chart-wise totals map
+          const chartTotalsMap = (() => {
+            const map: Record<string, number> = {
+              panna: 0,
+              jodi: 0,
+              sutta: 0,
+              cp: 0,
+              mpsp: 0,
+              mpdp: 0,
+              sangam: 0,
+              chakwad: 0,
+              spcommon: 0,
+              dpcommon: 0
+            };
+            if (allDashboardCharts) {
+              allDashboardCharts.forEach(c => {
+                const type = c.chart_type;
+                const total = Object.values(c.amounts || {}).reduce((s, val) => s + (val || 0), 0);
+                if (type in map) {
+                  map[type] = total;
+                }
+              });
+            }
+            return map;
+          })();
 
           const renderRiskTable = (
             list: typeof activePannas, 
@@ -1051,7 +1545,7 @@ export const CuttingPage: React.FC = () => {
 
                         let payoutColor = 'text-emerald-600';
                         if (riskType === 'over') payoutColor = 'text-red-600';
-                        else if (riskType === 'cut') payoutColor = 'text-amber-500';
+                        else if (riskType === 'cut') payoutColor = 'text-slate-700';
 
                         return (
                           <tr 
@@ -1062,11 +1556,19 @@ export const CuttingPage: React.FC = () => {
                           >
                             {/* Panna & Type badge inside cell */}
                             <td className="py-2.5 px-3 flex items-center gap-1.5 min-w-[90px]">
-                              <span className="font-extrabold text-slate-800 text-sm">{p.num}</span>
+                              <span className="font-extrabold text-slate-800 text-sm">
+                                {p.num.startsWith('SU') ? p.num.substring(2) : 
+                                 p.num.startsWith('MPSP_') ? p.num.replace('MPSP_', '') :
+                                 p.num.startsWith('MPDP_') ? p.num.replace('MPDP_', '') :
+                                 p.num.startsWith('SGM_') ? p.num.replace('SGM_', '') :
+                                 p.num.startsWith('CHK_') ? p.num.replace('CHK_', '') : p.num}
+                              </span>
                               <span className={`text-[8px] font-black px-1 py-0.2 rounded scale-90 ${
                                 p.type === 'SP' ? 'bg-blue-50 text-blue-600 border border-blue-100/50' :
                                 p.type === 'DP' ? 'bg-purple-50 text-purple-600 border border-purple-100/50' :
-                                'bg-amber-50 text-amber-700 border border-amber-100/50'
+                                p.type === 'TP' ? 'bg-amber-50 text-amber-700 border border-amber-100/55' :
+                                p.type === 'Jodi' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100/50' :
+                                'bg-teal-50 text-teal-600 border border-teal-100/50'
                               }`}>
                                 {p.type}
                               </span>
@@ -1074,7 +1576,7 @@ export const CuttingPage: React.FC = () => {
 
                             {/* Bet Amount */}
                             <td className="py-2.5 px-3 text-right text-slate-600 font-medium">
-                              ₹{p.amount}
+                              ₹{getDisplayAmount(p.num, p.amount)}
                             </td>
 
                             {/* Winning Payout & Payout Ratio percentage */}
@@ -1101,6 +1603,84 @@ export const CuttingPage: React.FC = () => {
             );
           };
 
+          const renderCutsNeededTable = (
+            list: typeof pannasToCut,
+            emptyMessage: string
+          ) => {
+            return (
+              <div className="overflow-x-auto w-full">
+                <table className="w-full text-left border-collapse text-xs select-none">
+                  <thead>
+                    <tr className="bg-slate-50/60 border-b border-slate-100 text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">
+                      <th className="py-2.5 px-3">Panna</th>
+                      <th className="py-2.5 px-3 text-right">Current Bet</th>
+                      <th className="py-2.5 px-3 text-right text-blue-600">Cut Amount</th>
+                      <th className="py-2.5 px-2 text-center no-print">Act</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
+                    {list.length === 0 ? (
+                      <tr>
+                        <td colSpan={4} className="py-12 text-center text-slate-400 italic font-medium">
+                          {emptyMessage}
+                        </td>
+                      </tr>
+                    ) : (
+                      list.map(p => {
+                        const isSearched = searchQuery && p.num === searchQuery;
+                        const rowHighlightClass = isSearched 
+                          ? 'bg-blue-50/60 ring-2 ring-blue-500/20 scale-[1.01] transition-all z-10' 
+                          : 'hover:bg-slate-50/50';
+
+                        return (
+                          <tr 
+                            key={p.num} 
+                            onClick={() => handleCellClick(p.num)}
+                            className={`cursor-pointer transition duration-100 ${rowHighlightClass}`}
+                            title="Click to adjust amount"
+                          >
+                            <td className="py-2.5 px-3 flex items-center gap-1.5 min-w-[90px]">
+                              <span className="font-extrabold text-slate-800 text-sm">
+                                {p.num.startsWith('SU') ? p.num.substring(2) : 
+                                 p.num.startsWith('MPSP_') ? p.num.replace('MPSP_', '') :
+                                 p.num.startsWith('MPDP_') ? p.num.replace('MPDP_', '') :
+                                 p.num.startsWith('SGM_') ? p.num.replace('SGM_', '') :
+                                 p.num.startsWith('CHK_') ? p.num.replace('CHK_', '') : p.num}
+                              </span>
+                              <span className={`text-[8px] font-black px-1 py-0.2 rounded scale-90 ${
+                                p.type === 'SP' ? 'bg-blue-50 text-blue-600 border border-blue-100/50' :
+                                p.type === 'DP' ? 'bg-purple-50 text-purple-600 border border-purple-100/50' :
+                                p.type === 'TP' ? 'bg-amber-50 text-amber-700 border border-amber-100/55' :
+                                p.type === 'Jodi' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100/50' :
+                                'bg-teal-50 text-teal-600 border border-teal-100/50'
+                              }`}>
+                                {p.type}
+                              </span>
+                            </td>
+
+                            <td className="py-2.5 px-3 text-right text-slate-500 font-medium">
+                              ₹{getDisplayAmount(p.num, p.amount)}
+                            </td>
+
+                            <td className="py-2.5 px-3 text-right">
+                              <span className="font-black text-blue-600">₹{getDisplayAmount(p.num, p.amountToCut)}</span>
+                            </td>
+
+                            <td className="py-2.5 px-2 text-center no-print" onClick={(e) => { e.stopPropagation(); handleCellClick(p.num); }}>
+                              <button className="px-1.5 py-0.5 bg-slate-50 border border-slate-200 hover:border-slate-350 hover:bg-slate-100 rounded-md text-[9px] font-extrabold text-slate-500 hover:text-slate-700 transition">
+                                Adjust
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            );
+          };
+
           return (
             <div className="flex flex-col gap-6">
               {/* Premium Dark Control Card */}
@@ -1109,7 +1689,7 @@ export const CuttingPage: React.FC = () => {
                 <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-6">
                   <div>
                     <h3 className="text-xl md:text-2xl font-black tracking-wide uppercase bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
-                      Panna P&L Risk Dashboard
+                      {targetView === 'analysis' ? 'Panna P&L Risk Dashboard' : targetView === 'jodi-analysis' ? 'Jodi P&L Risk Dashboard' : targetView === 'sutta-analysis' ? 'Sutta P&L Risk Dashboard' : 'Overall P&L Risk Dashboard'}
                     </h3>
                     <p className="text-slate-400 text-sm mt-1">
                       Configure payout multipliers and threshold volume to audit risk in real-time.
@@ -1117,61 +1697,117 @@ export const CuttingPage: React.FC = () => {
                   </div>
                   {/* Status Pills */}
                   <div className="flex items-center gap-2">
-                    <span className="bg-slate-800 text-slate-300 text-[10px] font-extrabold px-3 py-1.5 rounded-xl border border-slate-700 uppercase tracking-wider">
-                      SP: {spPayout / 10}x
-                    </span>
-                    <span className="bg-slate-800 text-slate-300 text-[10px] font-extrabold px-3 py-1.5 rounded-xl border border-slate-700 uppercase tracking-wider">
-                      DP: {dpPayout / 10}x
-                    </span>
-                    <span className="bg-slate-800 text-slate-300 text-[10px] font-extrabold px-3 py-1.5 rounded-xl border border-slate-700 uppercase tracking-wider">
-                      TP: {tpPayout / 10}x
-                    </span>
+                    {targetView === 'analysis' || targetView === 'overall-analysis' ? (
+                      <>
+                        <span className="bg-slate-800 text-slate-300 text-[10px] font-extrabold px-3 py-1.5 rounded-xl border border-slate-700 uppercase tracking-wider">
+                          SP: {spPayout / 10}x
+                        </span>
+                        <span className="bg-slate-800 text-slate-300 text-[10px] font-extrabold px-3 py-1.5 rounded-xl border border-slate-700 uppercase tracking-wider">
+                          DP: {dpPayout / 10}x
+                        </span>
+                        <span className="bg-slate-800 text-slate-300 text-[10px] font-extrabold px-3 py-1.5 rounded-xl border border-slate-700 uppercase tracking-wider">
+                          TP: {tpPayout / 10}x
+                        </span>
+                      </>
+                    ) : null}
+                    {targetView === 'jodi-analysis' || targetView === 'overall-analysis' ? (
+                      <span className="bg-slate-800 text-slate-300 text-[10px] font-extrabold px-3 py-1.5 rounded-xl border border-slate-700 uppercase tracking-wider">
+                        Jodi: {jodiPayout / 10}x
+                      </span>
+                    ) : null}
+                    {targetView === 'sutta-analysis' || targetView === 'overall-analysis' ? (
+                      <span className="bg-slate-800 text-slate-300 text-[10px] font-extrabold px-3 py-1.5 rounded-xl border border-slate-700 uppercase tracking-wider">
+                        Sutta: {suttaPayout / 10}x
+                      </span>
+                    ) : null}
                   </div>
                 </div>
 
                 {/* Dynamic Inputs grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mt-6 pt-6 border-t border-slate-800 relative">
-                  {/* SP Payout */}
-                  <div className="space-y-1">
-                    <label className="block text-[9px] font-black text-slate-400 uppercase tracking-wider">SP Payout (per ₹10)</label>
-                    <div className="relative">
-                      <span className="absolute left-3.5 top-2.5 text-slate-500 text-xs font-bold">₹</span>
-                      <input
-                        type="number"
-                        value={spPayout}
-                        onChange={(e) => setSpPayout(Math.max(0, parseInt(e.target.value, 10) || 0))}
-                        className="w-full bg-slate-800 border border-slate-700 pl-7 pr-3 py-2 rounded-xl text-xs font-bold text-white outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition placeholder:text-slate-650"
-                      />
-                    </div>
-                  </div>
+                <div className={`grid grid-cols-1 ${targetView === 'overall-analysis' ? 'sm:grid-cols-3 md:grid-cols-6' : 'sm:grid-cols-4'} gap-4 mt-6 pt-6 border-t border-slate-800 relative`}>
+                  {(targetView === 'analysis' || targetView === 'overall-analysis') && (
+                    <>
+                      {/* SP Payout */}
+                      <div className="space-y-1">
+                        <label className="block text-[9px] font-black text-slate-400 uppercase tracking-wider">SP Payout (per ₹10)</label>
+                        <div className="relative">
+                          <span className="absolute left-3.5 top-2.5 text-slate-500 text-xs font-bold">₹</span>
+                          <input
+                            type="number"
+                            value={spPayout}
+                            onChange={(e) => setSpPayout(Math.max(0, parseInt(e.target.value, 10) || 0))}
+                            className="w-full bg-slate-800 border border-slate-700 pl-7 pr-3 py-2 rounded-xl text-xs font-bold text-white outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition placeholder:text-slate-650"
+                          />
+                        </div>
+                      </div>
 
-                  {/* DP Payout */}
-                  <div className="space-y-1">
-                    <label className="block text-[9px] font-black text-slate-400 uppercase tracking-wider">DP Payout (per ₹10)</label>
-                    <div className="relative">
-                      <span className="absolute left-3.5 top-2.5 text-slate-500 text-xs font-bold">₹</span>
-                      <input
-                        type="number"
-                        value={dpPayout}
-                        onChange={(e) => setDpPayout(Math.max(0, parseInt(e.target.value, 10) || 0))}
-                        className="w-full bg-slate-800 border border-slate-700 pl-7 pr-3 py-2 rounded-xl text-xs font-bold text-white outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition placeholder:text-slate-650"
-                      />
-                    </div>
-                  </div>
+                      {/* DP Payout */}
+                      <div className="space-y-1">
+                        <label className="block text-[9px] font-black text-slate-400 uppercase tracking-wider">DP Payout (per ₹10)</label>
+                        <div className="relative">
+                          <span className="absolute left-3.5 top-2.5 text-slate-500 text-xs font-bold">₹</span>
+                          <input
+                            type="number"
+                            value={dpPayout}
+                            onChange={(e) => setDpPayout(Math.max(0, parseInt(e.target.value, 10) || 0))}
+                            className="w-full bg-slate-800 border border-slate-700 pl-7 pr-3 py-2 rounded-xl text-xs font-bold text-white outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition placeholder:text-slate-650"
+                          />
+                        </div>
+                      </div>
 
-                  {/* TP Payout */}
-                  <div className="space-y-1">
-                    <label className="block text-[9px] font-black text-slate-400 uppercase tracking-wider">TP Payout (per ₹10)</label>
-                    <div className="relative">
-                      <span className="absolute left-3.5 top-2.5 text-slate-500 text-xs font-bold">₹</span>
-                      <input
-                        type="number"
-                        value={tpPayout}
-                        onChange={(e) => setTpPayout(Math.max(0, parseInt(e.target.value, 10) || 0))}
-                        className="w-full bg-slate-800 border border-slate-700 pl-7 pr-3 py-2 rounded-xl text-xs font-bold text-white outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition placeholder:text-slate-650"
-                      />
-                    </div>
-                  </div>
+                      {/* TP Payout */}
+                      <div className="space-y-1">
+                        <label className="block text-[9px] font-black text-slate-400 uppercase tracking-wider">TP Payout (per ₹10)</label>
+                        <div className="relative">
+                          <span className="absolute left-3.5 top-2.5 text-slate-500 text-xs font-bold">₹</span>
+                          <input
+                            type="number"
+                            value={tpPayout}
+                            onChange={(e) => setTpPayout(Math.max(0, parseInt(e.target.value, 10) || 0))}
+                            className="w-full bg-slate-800 border border-slate-700 pl-7 pr-3 py-2 rounded-xl text-xs font-bold text-white outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition placeholder:text-slate-650"
+                          />
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  {(targetView === 'jodi-analysis' || targetView === 'overall-analysis') && (
+                    <>
+                      {/* Jodi Payout */}
+                      <div className={`space-y-1 ${targetView === 'overall-analysis' ? '' : 'sm:col-span-2'}`}>
+                        <label className="block text-[9px] font-black text-slate-400 uppercase tracking-wider">Jodi Payout (per ₹10)</label>
+                        <div className="relative">
+                          <span className="absolute left-3.5 top-2.5 text-slate-500 text-xs font-bold">₹</span>
+                          <input
+                            type="number"
+                            value={jodiPayout}
+                            onChange={(e) => setJodiPayout(Math.max(0, parseInt(e.target.value, 10) || 0))}
+                            className="w-full bg-slate-800 border border-slate-700 pl-7 pr-3 py-2 rounded-xl text-xs font-bold text-white outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition placeholder:text-slate-650"
+                          />
+                        </div>
+                      </div>
+                      {targetView !== 'overall-analysis' && <div className="hidden sm:block" />}
+                    </>
+                  )}
+
+                  {(targetView === 'sutta-analysis' || targetView === 'overall-analysis') && (
+                    <>
+                      {/* Sutta Payout */}
+                      <div className={`space-y-1 ${targetView === 'overall-analysis' ? '' : 'sm:col-span-2'}`}>
+                        <label className="block text-[9px] font-black text-slate-400 uppercase tracking-wider">Sutta Payout (per ₹10)</label>
+                        <div className="relative">
+                          <span className="absolute left-3.5 top-2.5 text-slate-500 text-xs font-bold">₹</span>
+                          <input
+                            type="number"
+                            value={suttaPayout}
+                            onChange={(e) => setSuttaPayout(Math.max(0, parseInt(e.target.value, 10) || 0))}
+                            className="w-full bg-slate-800 border border-slate-700 pl-7 pr-3 py-2 rounded-xl text-xs font-bold text-white outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition placeholder:text-slate-650"
+                          />
+                        </div>
+                      </div>
+                      {targetView !== 'overall-analysis' && <div className="hidden sm:block" />}
+                    </>
+                  )}
 
                   {/* Compare Total Volume Threshold */}
                   <div className="space-y-1">
@@ -1204,9 +1840,87 @@ export const CuttingPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Three Side-by-Side Tables Layout */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {/* 1. Over Limit Column Table */}
+              {targetView === 'overall-analysis' && (
+                <div className="bg-white rounded-3xl border border-slate-100 p-6 shadow-sm no-print space-y-4">
+                  <h4 className="text-sm font-extrabold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                    <Scissors className="h-4.5 w-4.5 text-blue-600 animate-pulse" />
+                    Chart-wise Volume Summary
+                  </h4>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-4">
+                    {[
+                      { key: 'panna', label: 'Family Chart', color: 'text-blue-600 bg-blue-50 border-blue-100' },
+                      { key: 'jodi', label: 'Jodi Chart', color: 'text-emerald-600 bg-emerald-50 border-emerald-100' },
+                      { key: 'sutta', label: 'Sutta', color: 'text-teal-600 bg-teal-50 border-teal-100' },
+                      { key: 'cp', label: 'CP Chart', color: 'text-cyan-600 bg-cyan-50 border-cyan-100' },
+                      { key: 'mpsp', label: 'Motor SP', color: 'text-purple-600 bg-purple-50 border-purple-100' },
+                      { key: 'mpdp', label: 'Motor DP', color: 'text-violet-600 bg-violet-50 border-violet-100' },
+                      { key: 'sangam', label: 'Sangam', color: 'text-orange-600 bg-orange-50 border-orange-100' },
+                      { key: 'chakwad', label: 'Chakwad', color: 'text-amber-600 bg-amber-50 border-amber-100' },
+                      { key: 'spcommon', label: 'SP Common', color: 'text-indigo-600 bg-indigo-50 border-indigo-100' },
+                      { key: 'dpcommon', label: 'DP Common', color: 'text-rose-600 bg-rose-50 border-rose-100' }
+                    ].map(item => {
+                      const total = chartTotalsMap[item.key] || 0;
+                      return (
+                        <div key={item.key} className="bg-slate-50/50 border border-slate-100 rounded-2xl p-4 flex flex-col justify-between space-y-2 hover:shadow-sm transition">
+                          <span className={`text-[9px] font-black px-2 py-0.5 rounded-full border w-max uppercase ${item.color}`}>
+                            {item.label}
+                          </span>
+                          <span className="text-lg font-black text-slate-800">
+                            {formatCurrency(total)}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Table Rows Filter Selector */}
+              <div className="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm flex items-center justify-between no-print flex-wrap gap-3">
+                <span className="text-sm font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
+                  <Scissors className="h-4.5 w-4.5 text-indigo-500 animate-pulse" />
+                  Filter Risk Tables
+                </span>
+                <div className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 border border-slate-200 rounded-xl shadow-sm">
+                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">Show:</span>
+                  <select
+                    value={analysisFilter}
+                    onChange={(e) => setAnalysisFilter(e.target.value)}
+                    className="bg-transparent text-xs font-bold text-slate-800 border-none outline-none focus:ring-0 cursor-pointer p-0 pr-6"
+                  >
+                    <option value="all">All Charts</option>
+                    <option value="panna">Only Panna</option>
+                    <option value="jodi">Only Jodi</option>
+                    <option value="sutta">Only Sutta</option>
+                    <option value="cp">Only CP</option>
+                    <option value="spcommon">Only SP Common</option>
+                    <option value="dpcommon">Only DP Common</option>
+                    <option value="motor">Only Motor</option>
+                    <option value="sangam">Only Sangam</option>
+                    <option value="chakwad">Only Chakwad</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Four Side-by-Side Tables Layout */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                {/* 1. Cutting Needed Column Table */}
+                <div className="bg-white rounded-3xl border border-blue-100 shadow-sm flex flex-col min-h-[500px] overflow-hidden">
+                  <div className="bg-gradient-to-r from-blue-50/50 to-indigo-50/50 px-5 py-4 border-b border-blue-100 flex items-center justify-between">
+                    <span className="text-sm font-black text-blue-700 tracking-wide uppercase flex items-center gap-2">
+                      <span className="h-2 w-2 rounded-full bg-blue-500" />
+                      Cutting Needed
+                    </span>
+                    <span className="bg-blue-600 text-white text-[10px] font-extrabold px-2.5 py-0.5 rounded-full shadow-sm">
+                      {pannasToCut.length}
+                    </span>
+                  </div>
+                  <div className="flex-1 overflow-y-auto max-h-[600px] scrollbar-thin">
+                    {renderCutsNeededTable(pannasToCut, 'No cutting needed.')}
+                  </div>
+                </div>
+
+                {/* 2. Over Limit Column Table */}
                 <div className="bg-white rounded-3xl border border-red-100 shadow-sm flex flex-col min-h-[500px] overflow-hidden">
                   <div className="bg-gradient-to-r from-red-50/50 to-rose-50/50 px-5 py-4 border-b border-red-100 flex items-center justify-between">
                     <span className="text-sm font-black text-red-700 tracking-wide uppercase flex items-center gap-2">
@@ -1222,14 +1936,14 @@ export const CuttingPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* 2. Cut to Cut Column Table */}
-                <div className="bg-white rounded-3xl border border-amber-100 shadow-sm flex flex-col min-h-[500px] overflow-hidden">
-                  <div className="bg-gradient-to-r from-amber-50/50 to-orange-50/50 px-5 py-4 border-b border-amber-100 flex items-center justify-between">
-                    <span className="text-sm font-black text-amber-700 tracking-wide uppercase flex items-center gap-2">
-                      <span className="h-2 w-2 rounded-full bg-amber-500" />
+                {/* 3. Cut to Cut Column Table */}
+                <div className="bg-white rounded-3xl border border-slate-200 shadow-sm flex flex-col min-h-[500px] overflow-hidden">
+                  <div className="bg-gradient-to-r from-slate-50 to-slate-50/50 px-5 py-4 border-b border-slate-200 flex items-center justify-between">
+                    <span className="text-sm font-black text-slate-700 tracking-wide uppercase flex items-center gap-2">
+                      <span className="h-2 w-2 rounded-full bg-slate-400" />
                       Cut to Cut
                     </span>
-                    <span className="bg-amber-500 text-white text-[10px] font-extrabold px-2.5 py-0.5 rounded-full shadow-sm">
+                    <span className="bg-slate-400 text-white text-[10px] font-extrabold px-2.5 py-0.5 rounded-full shadow-sm">
                       {sortedCutToCut.length}
                     </span>
                   </div>
@@ -1238,7 +1952,7 @@ export const CuttingPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* 3. Green Column Table */}
+                {/* 4. Green Column Table */}
                 <div className="bg-white rounded-3xl border border-emerald-100 shadow-sm flex flex-col min-h-[500px] overflow-hidden">
                   <div className="bg-gradient-to-r from-emerald-50/50 to-teal-50/50 px-5 py-4 border-b border-emerald-100 flex items-center justify-between">
                     <span className="text-sm font-black text-emerald-700 tracking-wide uppercase flex items-center gap-2">
@@ -1258,12 +1972,12 @@ export const CuttingPage: React.FC = () => {
           );
         })()}
 
-        {/* Jodi Chart */}
-        {targetView === 'jodi' && (
+        {/* Jodi and CP Chart */}
+        {(targetView === 'jodi' || targetView === 'cp') && (
           <div className="flex flex-col border border-black rounded-sm overflow-hidden bg-white max-w-full">
             {/* Title Row */}
             <div className="bg-[#facc15] text-[#b91c1c] text-2xl md:text-3xl font-extrabold text-center py-4 border-b-2 border-black tracking-widest uppercase select-none print-title">
-              Jodi Chart - {targetChart.name}
+              {targetView === 'jodi' ? 'Jodi Chart' : 'CP Chart'} - {targetChart.name}
             </div>
 
             {/* Grid Scrollable Wrapper */}
@@ -1293,7 +2007,9 @@ export const CuttingPage: React.FC = () => {
                       </td>
                       {Array.from({ length: 10 }).map((_, c) => {
                         const num = `${r}${c}`;
-                        const amount = chartAmounts[num] || 0;
+                        const numKey = targetView === 'cp' ? `CP_${num}` : num;
+                        const amount = chartAmounts[numKey] || 0;
+                        const displayAmount = getDisplayAmount(numKey, amount);
                         const isOverLimit = amount > redLimit;
                         const isHighlighted = searchQuery === num;
 
@@ -1302,7 +2018,7 @@ export const CuttingPage: React.FC = () => {
                           if (amount <= greenLimit) {
                             cellColorClass = 'bg-emerald-600 text-white hover:bg-emerald-700 font-bold';
                           } else if (amount <= yellowLimit) {
-                            cellColorClass = 'bg-amber-500 text-slate-900 hover:bg-amber-600 font-bold';
+                            cellColorClass = 'bg-white text-slate-900 hover:bg-slate-100 font-bold';
                           } else {
                             cellColorClass = 'bg-red-600 text-white hover:bg-red-700 red-cell font-bold';
                           }
@@ -1314,7 +2030,7 @@ export const CuttingPage: React.FC = () => {
                         return (
                           <td
                             key={c}
-                            onClick={() => handleCellClick(num)}
+                            onClick={() => handleCellClick(numKey)}
                             className={`py-3 px-0.5 border-r border-black last:border-r-0 align-middle cursor-pointer transition-all duration-150 relative ${cellColorClass} ${
                               highlightOverLimitOnly && !isOverLimit ? 'opacity-15 blur-[0.2px] grayscale transition-opacity duration-200' : ''
                             }`}
@@ -1329,7 +2045,7 @@ export const CuttingPage: React.FC = () => {
                                   amount <= yellowLimit ? 'bg-black/10 text-slate-900 shadow-sm' :
                                   'bg-white text-red-700 shadow-sm'
                                 }`}>
-                                  ₹{amount}
+                                  ₹{displayAmount}
                                 </span>
                               )}
                             </div>
@@ -1344,180 +2060,192 @@ export const CuttingPage: React.FC = () => {
           </div>
         )}
 
-        {/* Sutta Chart */}
-        {targetView === 'sutta' && (
-          <div className="flex flex-col gap-4">
-            {/* Title Card */}
-            <div className="bg-gradient-to-r from-teal-600 to-emerald-700 text-white rounded-2xl p-6 shadow-md select-none flex justify-between items-center no-print">
-              <div>
-                <h3 className="text-xl md:text-2xl font-black tracking-wide uppercase">
-                  Sutta Chart (0-9)
-                </h3>
-                <p className="text-emerald-100 text-sm mt-1">
-                  Monitor and adjust limits for Sutta single digits.
-                </p>
+                 {(targetView === 'sutta' || targetView === 'spcommon' || targetView === 'dpcommon') && (() => {
+          const isSpCommon = targetView === 'spcommon';
+          const isDpCommon = targetView === 'dpcommon';
+          const prefix = isSpCommon ? 'SPC_' : isDpCommon ? 'DPC_' : 'SU';
+          const title = isSpCommon ? 'SP Common Chart (0-9)' : isDpCommon ? 'DP Common Chart (0-9)' : 'Sutta Chart (0-9)';
+          const desc = isSpCommon ? 'Monitor and adjust limits for SP Common single digits.' : isDpCommon ? 'Monitor and adjust limits for DP Common single digits.' : 'Monitor and adjust limits for Sutta single digits.';
+          const badgeLabel = isSpCommon ? 'SP Common' : isDpCommon ? 'DP Common' : 'Sutta';
+          const viewLabel = isSpCommon ? 'SP Common View' : isDpCommon ? 'DP Common View' : 'Sutta View';
+          const fromBg = isSpCommon ? 'from-indigo-600 to-purple-700' : isDpCommon ? 'from-pink-600 to-rose-700' : 'from-teal-600 to-emerald-700';
+
+          return (
+            <div className="flex flex-col gap-4">
+              {/* Title Card */}
+              <div className={`bg-gradient-to-r ${fromBg} text-white rounded-2xl p-6 shadow-md select-none flex justify-between items-center no-print`}>
+                <div>
+                  <h3 className="text-xl md:text-2xl font-black tracking-wide uppercase">
+                    {title}
+                  </h3>
+                  <p className="text-emerald-100 text-sm mt-1">
+                    {desc}
+                  </p>
+                </div>
+                <span className="bg-white/20 text-white text-xs font-extrabold px-3 py-1 rounded-full uppercase tracking-wider">
+                  {viewLabel}
+                </span>
               </div>
-              <span className="bg-white/20 text-white text-xs font-extrabold px-3 py-1 rounded-full uppercase tracking-wider">
-                Sutta View
-              </span>
-            </div>
 
-            {/* Print Title */}
-            <div className="hidden print:block bg-[#facc15] text-[#b91c1c] text-2xl font-extrabold text-center py-4 border-2 border-black tracking-widest uppercase select-none print-title">
-              Sutta Chart - {targetChart.name}
-            </div>
+              {/* Print Title */}
+              <div className="hidden print:block bg-[#facc15] text-[#b91c1c] text-2xl font-extrabold text-center py-4 border-2 border-black tracking-widest uppercase select-none print-title">
+                {title} - {targetChart.name}
+              </div>
 
-            {/* Cards Container */}
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 print-spdp-grid no-print">
-              {Array.from({ length: 10 }).map((_, digit) => {
-                const numKey = `SU${digit}`;
-                const amount = chartAmounts[numKey] || 0;
-                const isOverLimit = amount > redLimit;
-                const isHighlighted = searchQuery === String(digit);
-                const percent = Math.min(100, Math.round((amount / redLimit) * 100));
+              {/* Cards Container */}
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 print-spdp-grid no-print">
+                {Array.from({ length: 10 }).map((_, digit) => {
+                  const numKey = `${prefix}${digit}`;
+                  const amount = chartAmounts[numKey] || 0;
+                  const displayAmount = getDisplayAmount(numKey, amount);
+                  const isOverLimit = amount > redLimit;
+                  const isHighlighted = searchQuery === String(digit);
+                  const percent = Math.min(100, Math.round((amount / redLimit) * 100));
 
-                let cardStyle = 'border-slate-100 hover:border-slate-200 hover:shadow-md hover:-translate-y-0.5';
-                let progressColor = 'bg-teal-500';
-                
-                if (amount > 0) {
-                  if (amount <= greenLimit) {
-                    cardStyle = 'border-emerald-500 bg-emerald-50/10 ring-2 ring-emerald-50';
-                    progressColor = 'bg-emerald-500';
-                  } else if (amount <= yellowLimit) {
-                    cardStyle = 'border-amber-500 bg-amber-50/10 ring-2 ring-amber-50';
-                    progressColor = 'bg-amber-500';
-                  } else {
-                    cardStyle = 'border-red-500 bg-red-50/10 ring-2 ring-red-100';
-                    progressColor = 'bg-red-600 animate-pulse';
+                  let cardStyle = 'border-slate-100 hover:border-slate-200 hover:shadow-md hover:-translate-y-0.5';
+                  let progressColor = 'bg-teal-500';
+                  
+                  if (amount > 0) {
+                    if (amount <= greenLimit) {
+                      cardStyle = 'border-emerald-500 bg-emerald-50/10 ring-2 ring-emerald-50';
+                      progressColor = 'bg-emerald-500';
+                    } else if (amount <= yellowLimit) {
+                      cardStyle = 'border-slate-200 bg-white ring-2 ring-slate-50';
+                      progressColor = 'bg-slate-400';
+                    } else {
+                      cardStyle = 'border-red-500 bg-red-50/10 ring-2 ring-red-100';
+                      progressColor = 'bg-red-600 animate-pulse';
+                    }
                   }
-                }
-                
-                if (isHighlighted) {
-                  cardStyle = 'border-blue-500 ring-2 ring-blue-100 scale-[1.03] shadow-md z-10';
-                }
+                  
+                  if (isHighlighted) {
+                    cardStyle = 'border-blue-500 ring-2 ring-blue-100 scale-[1.03] shadow-md z-10';
+                  }
 
-                return (
-                  <div
-                    key={digit}
-                    onClick={() => handleCellClick(numKey)}
-                    className={`bg-white border rounded-2xl p-5 shadow-sm transition-all duration-300 relative cursor-pointer group flex flex-col justify-between select-none ${cardStyle} ${
-                      highlightOverLimitOnly && !isOverLimit ? 'opacity-20 blur-[0.2px] grayscale transition-opacity duration-200' : ''
-                    }`}
-                  >
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <span className="text-slate-400 text-xs font-bold uppercase tracking-wider">
-                          Digit
-                        </span>
-                        <h4 className="text-4xl font-black text-slate-800 leading-none mt-1 group-hover:text-teal-600 transition-colors">
-                          {digit}
-                        </h4>
-                      </div>
-                      <span className={`text-[10px] font-black px-2 py-0.5 rounded-full uppercase ${
-                        amount > 0
-                          ? amount <= greenLimit ? 'bg-emerald-100 text-emerald-700' :
-                            amount <= yellowLimit ? 'bg-amber-100 text-amber-700' :
-                            'bg-red-100 text-red-700'
-                          : 'bg-slate-100 text-slate-600'
-                      }`}>
-                        Sutta
-                      </span>
-                    </div>
-
-                    <div className="mt-6 space-y-2">
-                      <div className="flex justify-between items-baseline">
-                        <span className={`text-lg font-black ${
-                          amount > 0
-                            ? amount <= greenLimit ? 'text-emerald-600' :
-                              amount <= yellowLimit ? 'text-amber-500' :
-                              'text-red-600'
-                            : 'text-slate-800'
-                        }`}>
-                          ₹{amount}
-                        </span>
-                        <span className="text-slate-400 text-[10px] font-semibold">
-                          Limit: ₹{chartLimit}
-                        </span>
-                      </div>
-
-                      {/* Progress bar */}
-                      <div className="space-y-1">
-                        <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
-                          <div 
-                            className={`${progressColor} h-full rounded-full transition-all duration-500`}
-                            style={{ width: `${percent}%` }}
-                          />
+                  return (
+                    <div
+                      key={digit}
+                      onClick={() => handleCellClick(numKey)}
+                      className={`bg-white border rounded-2xl p-5 shadow-sm transition-all duration-300 relative cursor-pointer group flex flex-col justify-between select-none ${cardStyle} ${
+                        highlightOverLimitOnly && !isOverLimit ? 'opacity-20 blur-[0.2px] grayscale transition-opacity duration-200' : ''
+                      }`}
+                    >
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <span className="text-slate-400 text-xs font-bold uppercase tracking-wider">
+                            Digit
+                          </span>
+                          <h4 className="text-4xl font-black text-slate-800 leading-none mt-1 group-hover:text-teal-600 transition-colors">
+                            {digit}
+                          </h4>
                         </div>
-                        <div className="flex justify-between text-[10px] font-bold">
-                          <span className={
+                        <span className={`text-[10px] font-black px-2 py-0.5 rounded-full uppercase ${
+                          amount > 0
+                            ? amount <= greenLimit ? 'bg-emerald-100 text-emerald-700' :
+                              amount <= yellowLimit ? 'bg-slate-100 text-slate-700' :
+                              'bg-red-100 text-red-700'
+                            : 'bg-slate-100 text-slate-600'
+                        }`}>
+                          {badgeLabel}
+                        </span>
+                      </div>
+
+                      <div className="mt-6 space-y-2">
+                        <div className="flex justify-between items-baseline">
+                          <span className={`text-lg font-black ${
                             amount > 0
                               ? amount <= greenLimit ? 'text-emerald-600' :
-                                amount <= yellowLimit ? 'text-amber-500' :
+                                amount <= yellowLimit ? 'text-slate-700' :
                                 'text-red-600'
-                              : 'text-slate-500'
-                          }>
-                            {percent}% Used
+                              : 'text-slate-800'
+                          }`}>
+                            ₹{displayAmount}
                           </span>
-                          {isOverLimit && (
-                            <span className="text-red-600 animate-pulse flex items-center gap-0.5">
-                              Over Limit!
+                          <span className="text-slate-400 text-[10px] font-semibold">
+                            Limit: ₹{chartLimit}
+                          </span>
+                        </div>
+
+                        {/* Progress bar */}
+                        <div className="space-y-1">
+                          <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                            <div 
+                              className={`${progressColor} h-full rounded-full transition-all duration-500`}
+                              style={{ width: `${percent}%` }}
+                            />
+                          </div>
+                          <div className="flex justify-between text-[10px] font-bold">
+                            <span className={
+                              amount > 0
+                                ? amount <= greenLimit ? 'text-emerald-600' :
+                                  amount <= yellowLimit ? 'text-slate-500' :
+                                  'text-red-600'
+                                : 'text-slate-505 text-slate-500'
+                            }>
+                              {percent}% Used
                             </span>
-                          )}
+                            {isOverLimit && (
+                              <span className="text-red-600 animate-pulse flex items-center gap-0.5">
+                                Over Limit!
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
 
-            {/* Printable Table View for Sutta (Only shown when printing) */}
-            <div className="hidden print:block w-full">
-              <table className="w-full text-center border-collapse border border-black">
-                <thead>
-                  <tr className="bg-[#facc15]">
-                    {Array.from({ length: 10 }).map((_, digit) => (
-                      <th key={digit} className="py-2 px-1 border border-black text-[#1e3a8a] text-sm font-black">
-                        {digit}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    {Array.from({ length: 10 }).map((_, digit) => {
-                      const numKey = `SU${digit}`;
-                      const amount = chartAmounts[numKey] || 0;
-                      
-                      let cellColorClass = 'bg-[#fef08a]';
-                      if (amount > 0) {
-                        if (amount <= greenLimit) {
-                          cellColorClass = 'bg-emerald-600 text-white font-bold';
-                        } else if (amount <= yellowLimit) {
-                          cellColorClass = 'bg-amber-400 text-slate-900 font-bold';
-                        } else {
-                          cellColorClass = 'bg-red-600 text-white red-cell font-bold';
+              {/* Printable Table View for Sutta/Common (Only shown when printing) */}
+              <div className="hidden print:block w-full">
+                <table className="w-full text-center border-collapse border border-black">
+                  <thead>
+                    <tr className="bg-[#facc15]">
+                      {Array.from({ length: 10 }).map((_, digit) => (
+                        <th key={digit} className="py-2 px-1 border border-black text-[#1e3a8a] text-sm font-black">
+                          {digit}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      {Array.from({ length: 10 }).map((_, digit) => {
+                        const numKey = `${prefix}${digit}`;
+                        const amount = chartAmounts[numKey] || 0;
+                        const displayAmount = getDisplayAmount(numKey, amount);
+                        
+                        let cellColorClass = 'bg-[#fef08a]';
+                        if (amount > 0) {
+                          if (amount <= greenLimit) {
+                            cellColorClass = 'bg-emerald-600 text-white font-bold';
+                          } else if (amount <= yellowLimit) {
+                            cellColorClass = 'bg-white text-slate-900 font-bold';
+                          } else {
+                            cellColorClass = 'bg-red-600 text-white red-cell font-bold';
+                          }
                         }
-                      }
-                      
-                      return (
-                        <td 
-                          key={digit} 
-                          className={`py-3 px-1 border border-black font-extrabold text-sm ${cellColorClass}`}
-                        >
-                          <div>
-                            <div>{digit}</div>
-                            {amount > 0 && <div className="text-[10px] mt-1">₹{amount}</div>}
-                          </div>
-                        </td>
-                      );
-                    })}
-                  </tr>
-                </tbody>
-              </table>
+                        
+                        return (
+                          <td 
+                            key={digit} 
+                            className={`py-3 px-1 border border-black font-extrabold text-sm ${cellColorClass}`}
+                          >
+                            <div>
+                              <div>{digit}</div>
+                              {amount > 0 && <div className="text-[10px] mt-1">₹{displayAmount}</div>}
+                            </div>
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* Motor / Sangam / Chakwad Lists */}
         {(targetView === 'mpsp' || targetView === 'mpdp' || targetView === 'sangam' || targetView === 'chakwad') && (
@@ -1577,8 +2305,8 @@ export const CuttingPage: React.FC = () => {
                             rowBg = 'bg-emerald-50/5 hover:bg-emerald-50/15';
                             progressColor = 'bg-emerald-500';
                           } else if (entry.amount <= yellowLimit) {
-                            rowBg = 'bg-amber-50/5 hover:bg-amber-50/15';
-                            progressColor = 'bg-amber-500';
+                            rowBg = 'bg-white hover:bg-slate-50/50';
+                            progressColor = 'bg-slate-400';
                           } else {
                             rowBg = 'bg-red-50/10 hover:bg-red-50/20';
                             progressColor = 'bg-red-500 animate-pulse';
@@ -1595,20 +2323,20 @@ export const CuttingPage: React.FC = () => {
                             <td className="py-4 px-6 text-xs">
                               <span className={`px-2 py-0.5 rounded-full border ${
                                 entry.amount <= greenLimit ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
-                                entry.amount <= yellowLimit ? 'bg-amber-50 text-amber-700 border-amber-100' :
+                                entry.amount <= yellowLimit ? 'bg-slate-50 text-slate-700 border-slate-200' :
                                 'bg-red-50 text-red-700 border-red-100'
                               }`}>
                                 {entry.type}
                               </span>
                             </td>
                             <td className="py-4 px-6 text-right text-lg font-black text-slate-800">
-                              ₹{entry.amount}
+                              ₹{entry.displayAmount}
                             </td>
                             <td className="py-4 px-6 text-right">
                               <div className="flex flex-col items-end gap-1">
                                 <span className={`text-xs ${
                                   entry.amount <= greenLimit ? 'text-emerald-600' :
-                                  entry.amount <= yellowLimit ? 'text-amber-500 font-bold' :
+                                  entry.amount <= yellowLimit ? 'text-slate-500 font-bold' :
                                   'text-red-600 font-bold'
                                 }`}>
                                   {percent}% of limit
@@ -1700,7 +2428,9 @@ export const CuttingPage: React.FC = () => {
     }
   }, [activeChart?.id, activeChart?.limit]);
 
-  if (isGroupsLoading || isChartLoading || !groups) {
+  const isOverallLoading = activeView === 'overall-analysis' ? isAllChartsLoading : false;
+
+  if (isGroupsLoading || isChartLoading || isOverallLoading || !groups) {
     return <Loader />;
   }
 
@@ -1735,6 +2465,167 @@ export const CuttingPage: React.FC = () => {
   // --- Calculations ---
   const totalCuttingVolume = Object.values(amounts).reduce((sum, val) => sum + (val || 0), 0);
   const overLimitCount = Object.values(amounts).filter(val => val > limit).length;
+
+  const overloadedBetsCount = (() => {
+    const totalVolumeThreshold = isTotalVolumeOverridden 
+      ? (parseFloat(analysisTotalVolumeInput) || 0) 
+      : (activeView === 'overall-analysis' ? overallTotalVolume : totalCuttingVolume);
+
+    if (activeView === 'analysis') {
+      return Object.keys(amounts).filter(num => {
+        const pannaType = getPannaType(num);
+        let multiplier = 0;
+        if (pannaType === 'SP') multiplier = spPayout / 10;
+        else if (pannaType === 'DP') multiplier = dpPayout / 10;
+        else multiplier = tpPayout / 10;
+        const winningAmount = (amounts[num] || 0) * multiplier;
+        return winningAmount > totalVolumeThreshold;
+      }).length;
+    } else if (activeView === 'jodi-analysis') {
+      let count = 0;
+      for (let i = 0; i < 100; i++) {
+        const num = i.toString().padStart(2, '0');
+        const amount = amounts[num] || 0;
+        if (amount > 0) {
+          const winningAmount = amount * (jodiPayout / 10);
+          if (winningAmount > totalVolumeThreshold) {
+            count++;
+          }
+        }
+      }
+      return count;
+    } else if (activeView === 'sutta-analysis') {
+      let count = 0;
+      for (let i = 0; i < 10; i++) {
+        const num = `SU${i}`;
+        const amount = amounts[num] || 0;
+        if (amount > 0) {
+          const winningAmount = amount * (suttaPayout / 10);
+          if (winningAmount > totalVolumeThreshold) {
+            count++;
+          }
+        }
+      }
+      return count;
+    } else if (activeView === 'overall-analysis') {
+      let count = 0;
+      if (allDashboardCharts) {
+        allDashboardCharts.forEach(chart => {
+          const chartAmounts = chart.amounts || {};
+          if (chart.chart_type === 'panna') {
+            COLUMNS.flatMap(col => col.numbers).forEach(num => {
+              const amount = chartAmounts[num] || 0;
+              if (amount > 0) {
+                const pannaType = getPannaType(num);
+                let multiplier = 0;
+                if (pannaType === 'SP') multiplier = spPayout / 10;
+                else if (pannaType === 'DP') multiplier = dpPayout / 10;
+                else multiplier = tpPayout / 10;
+                const winningAmount = amount * multiplier;
+                if (winningAmount > totalVolumeThreshold) {
+                  count++;
+                }
+              }
+            });
+          } else if (chart.chart_type === 'jodi') {
+            for (let i = 0; i < 100; i++) {
+              const num = i.toString().padStart(2, '0');
+              const amount = chartAmounts[num] || 0;
+              if (amount > 0) {
+                const winningAmount = amount * (jodiPayout / 10);
+                if (winningAmount > totalVolumeThreshold) {
+                  count++;
+                }
+              }
+            }
+          } else if (chart.chart_type === 'sutta') {
+            for (let i = 0; i < 10; i++) {
+              const num = `SU${i}`;
+              const amount = chartAmounts[num] || 0;
+              if (amount > 0) {
+                const winningAmount = amount * (suttaPayout / 10);
+                if (winningAmount > totalVolumeThreshold) {
+                  count++;
+                }
+              }
+            }
+          } else if (chart.chart_type === 'mpsp') {
+            Object.entries(chartAmounts).forEach(([, val]) => {
+              if (typeof val === 'number' && val > 0) {
+                const winningAmount = val * (spPayout / 10);
+                if (winningAmount > totalVolumeThreshold) {
+                  count++;
+                }
+              }
+            });
+          } else if (chart.chart_type === 'mpdp') {
+            Object.entries(chartAmounts).forEach(([, val]) => {
+              if (typeof val === 'number' && val > 0) {
+                const winningAmount = val * (dpPayout / 10);
+                if (winningAmount > totalVolumeThreshold) {
+                  count++;
+                }
+              }
+            });
+          } else if (chart.chart_type === 'sangam') {
+            Object.entries(chartAmounts).forEach(([, val]) => {
+              if (typeof val === 'number' && val > 0) {
+                const winningAmount = val * 1500;
+                if (winningAmount > totalVolumeThreshold) {
+                  count++;
+                }
+              }
+            });
+          } else if (chart.chart_type === 'chakwad') {
+            Object.entries(chartAmounts).forEach(([, val]) => {
+              if (typeof val === 'number' && val > 0) {
+                const winningAmount = val * 450;
+                if (winningAmount > totalVolumeThreshold) {
+                  count++;
+                }
+              }
+            });
+          } else if (chart.chart_type === 'cp') {
+            for (let i = 0; i < 100; i++) {
+              const num = i.toString().padStart(2, '0');
+              const numKey = `CP_${num}`;
+              const amount = chartAmounts[numKey] || 0;
+              if (amount > 0) {
+                const winningAmount = amount * (spPayout / 100);
+                if (winningAmount > totalVolumeThreshold) {
+                  count++;
+                }
+              }
+            }
+          } else if (chart.chart_type === 'spcommon') {
+            for (let i = 0; i < 10; i++) {
+              const numKey = `SPC_${i}`;
+              const amount = chartAmounts[numKey] || 0;
+              if (amount > 0) {
+                const winningAmount = amount * ((spPayout / 10) / 36);
+                if (winningAmount > totalVolumeThreshold) {
+                  count++;
+                }
+              }
+            }
+          } else if (chart.chart_type === 'dpcommon') {
+            for (let i = 0; i < 10; i++) {
+              const numKey = `DPC_${i}`;
+              const amount = chartAmounts[numKey] || 0;
+              if (amount > 0) {
+                const winningAmount = amount * ((dpPayout / 10) / 18);
+                if (winningAmount > totalVolumeThreshold) {
+                  count++;
+                }
+              }
+            }
+          }
+        });
+      }
+      return count;
+    }
+    return 0;
+  })();
 
 
 
@@ -1847,11 +2738,31 @@ export const CuttingPage: React.FC = () => {
       }
       keyNum = 'SU' + num;
       targetNumbers = useFamily ? getSingleFamilyMembers(num).map(d => 'SU' + d) : [keyNum];
+    } else if (viewType === 'spcommon') {
+      if (num.length !== 1 || !/^\d$/.test(num)) {
+        setErrorMsg(`Invalid SP Common Digit: ${num}. Must be a single digit from 0 to 9.`);
+        return null;
+      }
+      keyNum = 'SPC_' + num;
+      targetNumbers = useFamily ? getSingleFamilyMembers(num).map(d => 'SPC_' + d) : [keyNum];
+    } else if (viewType === 'dpcommon') {
+      if (num.length !== 1 || !/^\d$/.test(num)) {
+        setErrorMsg(`Invalid DP Common Digit: ${num}. Must be a single digit from 0 to 9.`);
+        return null;
+      }
+      keyNum = 'DPC_' + num;
+      targetNumbers = useFamily ? getSingleFamilyMembers(num).map(d => 'DPC_' + d) : [keyNum];
+    } else if (viewType === 'cp') {
+      if (num.length !== 2 || !/^\d{2}$/.test(num)) {
+        setErrorMsg(`Invalid CP: ${num}. Must be a 2-digit number from 00 to 99.`);
+        return null;
+      }
+      targetNumbers = useFamily ? getJodiFamilyMembers(num).map(n => 'CP_' + n) : ['CP_' + num];
     } else if (viewType === 'mpsp') {
       const digits = num.split('');
       const uniqueDigits = Array.from(new Set(digits));
-      if (digits.length < 3 || digits.length > 9 || uniqueDigits.length !== digits.length || !/^\d+$/.test(num)) {
-        setErrorMsg('Invalid Motor digits. Must be between 3 and 9 unique digits.');
+      if (digits.length < 4 || digits.length > 10 || uniqueDigits.length !== digits.length || !/^\d+$/.test(num)) {
+        setErrorMsg('Invalid Motor digits. Must be between 4 and 10 unique digits.');
         return null;
       }
       const sortedDigits = sortMatkaDigits(uniqueDigits);
@@ -1860,8 +2771,8 @@ export const CuttingPage: React.FC = () => {
     } else if (viewType === 'mpdp') {
       const digits = num.split('');
       const uniqueDigits = Array.from(new Set(digits));
-      if (digits.length < 3 || digits.length > 9 || uniqueDigits.length !== digits.length || !/^\d+$/.test(num)) {
-        setErrorMsg('Invalid Motor digits. Must be between 3 and 9 unique digits.');
+      if (digits.length < 4 || digits.length > 10 || uniqueDigits.length !== digits.length || !/^\d+$/.test(num)) {
+        setErrorMsg('Invalid Motor digits. Must be between 4 and 10 unique digits.');
         return null;
       }
       const sortedDigits = sortMatkaDigits(uniqueDigits);
@@ -1979,11 +2890,22 @@ export const CuttingPage: React.FC = () => {
     const isChakwad = viewType === 'chakwad';
 
     const runMutation = (keyNumber: string, targets: string[]) => {
+      let finalAmt = amt;
+      if (viewType === 'mpsp' || viewType === 'mpdp') {
+        finalAmt = amt * getMotorMultiplier(keyNumber, viewType);
+      } else if (viewType === 'cp') {
+        finalAmt = amt * 10;
+      } else if (viewType === 'spcommon') {
+        finalAmt = amt * 36;
+      } else if (viewType === 'dpcommon') {
+        finalAmt = amt * 18;
+      }
+
       logEntryMutation.mutate({
         chartId: targetChart.id,
         data: {
           number: keyNumber,
-          amount: amt,
+          amount: finalAmt,
           type: mode,
           is_family: useFamily,
           affected_numbers: targets
@@ -2068,7 +2990,7 @@ export const CuttingPage: React.FC = () => {
             amtInput = afterHyphen;
             numInput = beforeHyphen;
           }
-        } else if (typeVal !== 'mpsp' && typeVal !== 'mpdp' && typeVal !== 'motor spdp') {
+        } else {
           const lastIndex = numInput.lastIndexOf('-');
           const afterHyphen = numInput.substring(lastIndex + 1);
           if (/^\d+(\.\d+)?$/.test(afterHyphen)) {
@@ -2109,7 +3031,7 @@ export const CuttingPage: React.FC = () => {
         // Resolve targets for each number item
         let combinedTargets: string[] = [];
         for (const item of rawNumItems) {
-          const resolvedType = typeVal === 'family' ? 'panna' : typeVal;
+          const resolvedType = typeVal === 'family' ? 'panna' : (typeVal === 'motor spdp' ? currentType : typeVal);
           const resolved = getResolvedTargetsForSingleNum(item, useFamily, resolvedType);
           if (!resolved) {
             // Error is already set in state inside getResolvedTargetsForSingleNum
@@ -2128,9 +3050,20 @@ export const CuttingPage: React.FC = () => {
           keyNumber = keyNumber + ' dp';
         }
         
+        let finalAmt = amt;
+        if (currentType === 'mpsp' || currentType === 'mpdp') {
+          finalAmt = amt * getMotorMultiplier(keyNumber, currentType);
+        } else if (currentType === 'cp') {
+          finalAmt = amt * 10;
+        } else if (currentType === 'spcommon') {
+          finalAmt = amt * 36;
+        } else if (currentType === 'dpcommon') {
+          finalAmt = amt * 18;
+        }
+
         await cuttingApi.logEntry(chart.id, {
           number: keyNumber,
-          amount: amt,
+          amount: finalAmt,
           type: 'ADD',
           is_family: useFamily,
           affected_numbers: uniqueTargets
@@ -2217,7 +3150,7 @@ export const CuttingPage: React.FC = () => {
               amtInput = afterHyphen;
               numInput = beforeHyphen;
             }
-          } else if (typeVal !== 'mpsp' && typeVal !== 'mpdp' && typeVal !== 'motor spdp') {
+          } else {
             const lastIndex = numInput.lastIndexOf('-');
             const afterHyphen = numInput.substring(lastIndex + 1);
             if (/^\d+(\.\d+)?$/.test(afterHyphen)) {
@@ -2244,16 +3177,21 @@ export const CuttingPage: React.FC = () => {
           continue;
         }
 
-        let combinedTargets: string[] = [];
         let resolveFailed = false;
-        for (const item of rawNumItems) {
-          const resolvedType = typeVal === 'family' ? 'panna' : typeVal;
-          const resolved = getResolvedTargetsForSingleNum(item, useFamily, resolvedType);
-          if (!resolved) {
-            resolveFailed = true;
-            break;
+        const targetsMap: Record<string, string[]> = {};
+        for (const currentType of chartTypesToLog) {
+          let combinedTargets: string[] = [];
+          for (const item of rawNumItems) {
+            const resolvedType = typeVal === 'family' ? 'panna' : (typeVal === 'motor spdp' ? currentType : typeVal);
+            const resolved = getResolvedTargetsForSingleNum(item, useFamily, resolvedType);
+            if (!resolved) {
+              resolveFailed = true;
+              break;
+            }
+            combinedTargets.push(...resolved);
           }
-          combinedTargets.push(...resolved);
+          if (resolveFailed) break;
+          targetsMap[currentType] = Array.from(new Set(combinedTargets));
         }
 
         if (resolveFailed) {
@@ -2261,10 +3199,9 @@ export const CuttingPage: React.FC = () => {
           continue;
         }
 
-        const uniqueTargets = Array.from(new Set(combinedTargets));
-
         for (const currentType of chartTypesToLog) {
           const chart = chartsMap[currentType];
+          const uniqueTargets = targetsMap[currentType];
           let keyNumber = rawNumItems.join(',');
           if (typeVal === 'sp' && !keyNumber.toLowerCase().endsWith('sp')) {
             keyNumber = keyNumber + ' sp';
@@ -2272,9 +3209,20 @@ export const CuttingPage: React.FC = () => {
             keyNumber = keyNumber + ' dp';
           }
 
+          let finalAmt = amt;
+          if (currentType === 'mpsp' || currentType === 'mpdp') {
+            finalAmt = amt * getMotorMultiplier(keyNumber, currentType);
+          } else if (currentType === 'cp') {
+            finalAmt = amt * 10;
+          } else if (currentType === 'spcommon') {
+            finalAmt = amt * 36;
+          } else if (currentType === 'dpcommon') {
+            finalAmt = amt * 18;
+          }
+
           await cuttingApi.logEntry(chart.id, {
             number: keyNumber,
-            amount: amt,
+            amount: finalAmt,
             type: 'ADD',
             is_family: useFamily,
             affected_numbers: uniqueTargets
@@ -2388,9 +3336,20 @@ export const CuttingPage: React.FC = () => {
           keyNumber = uniqueTargets[0];
         }
 
+        let finalAmt = amt;
+        if (activeView === 'mpsp' || activeView === 'mpdp') {
+          finalAmt = amt * getMotorMultiplier(keyNumber, activeView);
+        } else if (activeView === 'cp') {
+          finalAmt = amt * 10;
+        } else if (activeView === 'spcommon') {
+          finalAmt = amt * 36;
+        } else if (activeView === 'dpcommon') {
+          finalAmt = amt * 18;
+        }
+
         await cuttingApi.logEntry(activeChart.id, {
           number: keyNumber,
-          amount: amt,
+          amount: finalAmt,
           type: entryMode,
           is_family: applyFamily,
           affected_numbers: uniqueTargets
@@ -2421,10 +3380,16 @@ export const CuttingPage: React.FC = () => {
     let baseNum = selectedCell;
     if (selectedCell.startsWith('SU')) {
       baseNum = selectedCell.substring(2);
+    } else if (selectedCell.startsWith('SPC_')) {
+      baseNum = selectedCell.replace('SPC_', '');
+    } else if (selectedCell.startsWith('DPC_')) {
+      baseNum = selectedCell.replace('DPC_', '');
     } else if (selectedCell.startsWith('MPSP_')) {
       baseNum = selectedCell.replace('MPSP_', '');
     } else if (selectedCell.startsWith('MPDP_')) {
       baseNum = selectedCell.replace('MPDP_', '');
+    } else if (selectedCell.startsWith('CP_')) {
+      baseNum = selectedCell.replace('CP_', '');
     } else if (selectedCell.startsWith('SGM_')) {
       baseNum = selectedCell.replace('SGM_', '');
     } else if (selectedCell.startsWith('CHK_')) {
@@ -2433,7 +3398,42 @@ export const CuttingPage: React.FC = () => {
       baseNum = selectedCell.substring(1);
     }
     
-    const success = handleProcessEntry(baseNum, cellModalAmount, cellModalMode, cellModalApplyFamily, true);
+    let resolvedViewType = activeView;
+    if (activeView === 'overall-analysis') {
+      if (selectedCell.startsWith('SU')) {
+        resolvedViewType = 'sutta';
+      } else if (selectedCell.startsWith('SPC_')) {
+        resolvedViewType = 'spcommon';
+      } else if (selectedCell.startsWith('DPC_')) {
+        resolvedViewType = 'dpcommon';
+      } else if (selectedCell.startsWith('MPSP_')) {
+        resolvedViewType = 'mpsp';
+      } else if (selectedCell.startsWith('MPDP_')) {
+        resolvedViewType = 'mpdp';
+      } else if (selectedCell.startsWith('CP_')) {
+        resolvedViewType = 'cp';
+      } else if (selectedCell.startsWith('SGM_')) {
+        resolvedViewType = 'sangam';
+      } else if (selectedCell.startsWith('CHK_')) {
+        resolvedViewType = 'chakwad';
+      } else if (/^\d{2}$/.test(selectedCell)) {
+        resolvedViewType = 'jodi';
+      } else {
+        resolvedViewType = 'panna';
+      }
+    }
+
+    const resolvedChart = allDashboardCharts?.find(c => c.chart_type === resolvedViewType) || activeChart!;
+
+    const success = handleProcessEntry(
+      baseNum, 
+      cellModalAmount, 
+      cellModalMode, 
+      cellModalApplyFamily, 
+      true, 
+      resolvedViewType, 
+      resolvedChart
+    );
     if (success) {
       setSelectedCell(null);
       setCellModalAmount('');
@@ -2467,6 +3467,7 @@ export const CuttingPage: React.FC = () => {
       activeView === 'panna' ? '220 Panna Chart' :
       activeView === 'jodi' ? 'Jodi Chart' :
       activeView === 'sutta' ? 'Sutta Chart' :
+      activeView === 'cp' ? 'CP Chart' :
       activeView === 'mpsp' ? 'MPSP Chart' :
       activeView === 'mpdp' ? 'MPDP Chart' :
       activeView === 'sangam' ? 'Sangam Chart' : 'Chakwad Chart';
@@ -2487,6 +3488,7 @@ export const CuttingPage: React.FC = () => {
       activeView === 'panna' ? '220 Panna Chart' :
       activeView === 'jodi' ? 'Jodi Chart' :
       activeView === 'sutta' ? 'Sutta Chart' :
+      activeView === 'cp' ? 'CP Chart' :
       activeView === 'mpsp' ? 'MPSP Chart' :
       activeView === 'mpdp' ? 'MPDP Chart' :
       activeView === 'sangam' ? 'Sangam Chart' : 'Chakwad Chart';
@@ -2533,6 +3535,7 @@ export const CuttingPage: React.FC = () => {
     const params = new URLSearchParams(searchParams);
     params.set('view', view);
     setSearchParams(params);
+    setAnalysisFilter('all');
   };
 
   return (
@@ -2796,11 +3799,17 @@ export const CuttingPage: React.FC = () => {
           {key: 'panna', label: 'Family Chart'},
           { key: 'jodi', label: 'Jodi Chart (00-99)' },
           { key: 'sutta', label: 'Sutta (0-9)' },
+          { key: 'cp', label: 'CP Chart (00-99)' },
+          { key: 'spcommon', label: 'SP Common (0-9)' },
+          { key: 'dpcommon', label: 'DP Common (0-9)' },
           { key: 'mpsp', label: 'Motor SP (MPSP)' },
           { key: 'mpdp', label: 'Motor DP (MPDP)' },
           { key: 'sangam', label: 'Sangam' },
           { key: 'chakwad', label: 'Chakwad' },
           { key: 'analysis', label: 'Panna P&L Analysis' },
+          { key: 'jodi-analysis', label: 'Jodi P&L Analysis' },
+          { key: 'sutta-analysis', label: 'Sutta P&L Analysis' },
+          { key: 'overall-analysis', label: 'Overall P&L Analysis' },
         ].map((tab) => (
           <button
             key={tab.key}
@@ -2821,8 +3830,12 @@ export const CuttingPage: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 no-print">
           <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm flex items-center justify-between">
             <div className="space-y-1">
-              <p className="text-sm font-semibold text-slate-500 uppercase tracking-wide">Total Volume Logged</p>
-              <h3 className="text-2xl font-bold text-slate-800">{formatCurrency(totalCuttingVolume)}</h3>
+              <p className="text-sm font-semibold text-slate-500 uppercase tracking-wide">
+                {activeView === 'overall-analysis' ? 'Overall Volume Logged' : 'Total Volume Logged'}
+              </p>
+              <h3 className="text-2xl font-bold text-slate-800">
+                {formatCurrency(activeView === 'overall-analysis' ? overallTotalVolume : totalCuttingVolume)}
+              </h3>
             </div>
             <div className="p-4 bg-blue-50 rounded-xl text-blue-600">
               <TrendingUp className="h-6 w-6" />
@@ -2831,26 +3844,15 @@ export const CuttingPage: React.FC = () => {
 
           <div 
             onClick={() => {
-              if (activeView !== 'analysis' && overLimitCount > 0) {
+              if (!isAnalysisView && overLimitCount > 0) {
                 setHighlightOverLimitOnly(!highlightOverLimitOnly);
               }
             }}
             className={`bg-white rounded-2xl p-6 border shadow-sm flex items-center justify-between transition-all duration-200 select-none ${
-              activeView !== 'analysis' && overLimitCount > 0 ? 'cursor-pointer hover:bg-slate-50/50' : ''
+              !isAnalysisView && overLimitCount > 0 ? 'cursor-pointer hover:bg-slate-50/50' : ''
             } ${
-              activeView === 'analysis'
-                ? (Object.keys(amounts).filter(num => {
-                    const pannaType = getPannaType(num);
-                    let multiplier = 0;
-                    if (pannaType === 'SP') multiplier = spPayout / 10;
-                    else if (pannaType === 'DP') multiplier = dpPayout / 10;
-                    else multiplier = tpPayout / 10;
-                    const winningAmount = (amounts[num] || 0) * multiplier;
-                    const totalVolumeThreshold = isTotalVolumeOverridden 
-                      ? (parseFloat(analysisTotalVolumeInput) || 0) 
-                      : totalCuttingVolume;
-                    return winningAmount > totalVolumeThreshold;
-                  }).length) > 0 ? 'border-red-500 bg-red-50/10' : 'border-slate-100'
+              isAnalysisView
+                ? overloadedBetsCount > 0 ? 'border-red-500 bg-red-50/10' : 'border-slate-100'
                 : highlightOverLimitOnly 
                   ? 'border-red-500 bg-red-50/20 ring-2 ring-red-100' 
                   : 'border-slate-100'
@@ -2858,58 +3860,21 @@ export const CuttingPage: React.FC = () => {
           >
             <div className="space-y-1">
               <p className="text-sm font-semibold text-slate-500 uppercase tracking-wide">
-                {activeView === 'analysis'
-                  ? 'Overloaded Pannas'
+                {isAnalysisView
+                  ? (activeView === 'analysis' ? 'Overloaded Pannas' : activeView === 'jodi-analysis' ? 'Overloaded Jodis' : activeView === 'sutta-analysis' ? 'Overloaded Suttas' : 'Overall Overloaded Bets')
                   : highlightOverLimitOnly ? 'Filtering: Over Limit' : 'Numbers Over Limit'}
               </p>
               <h3 className={`text-2xl font-bold ${
-                (activeView === 'analysis'
-                  ? Object.keys(amounts).filter(num => {
-                      const pannaType = getPannaType(num);
-                      let multiplier = 0;
-                      if (pannaType === 'SP') multiplier = spPayout / 10;
-                      else if (pannaType === 'DP') multiplier = dpPayout / 10;
-                      else multiplier = tpPayout / 10;
-                      const winningAmount = (amounts[num] || 0) * multiplier;
-                      const totalVolumeThreshold = isTotalVolumeOverridden 
-                        ? (parseFloat(analysisTotalVolumeInput) || 0) 
-                        : totalCuttingVolume;
-                      return winningAmount > totalVolumeThreshold;
-                    }).length
-                  : overLimitCount) > 0 
-                    ? 'text-red-600 animate-pulse' 
-                    : 'text-slate-800'
+                (isAnalysisView ? overloadedBetsCount : overLimitCount) > 0 
+                  ? 'text-red-600 animate-pulse' 
+                  : 'text-slate-800'
               }`}>
-                {activeView === 'analysis'
-                  ? Object.keys(amounts).filter(num => {
-                      const pannaType = getPannaType(num);
-                      let multiplier = 0;
-                      if (pannaType === 'SP') multiplier = spPayout / 10;
-                      else if (pannaType === 'DP') multiplier = dpPayout / 10;
-                      else multiplier = tpPayout / 10;
-                      const winningAmount = (amounts[num] || 0) * multiplier;
-                      const totalVolumeThreshold = isTotalVolumeOverridden 
-                        ? (parseFloat(analysisTotalVolumeInput) || 0) 
-                        : totalCuttingVolume;
-                      return winningAmount > totalVolumeThreshold;
-                    }).length
-                  : overLimitCount}
+                {isAnalysisView ? overloadedBetsCount : overLimitCount}
               </h3>
             </div>
             <div className={`p-4 rounded-xl transition-all duration-200 ${
-              activeView === 'analysis'
-                ? (Object.keys(amounts).filter(num => {
-                    const pannaType = getPannaType(num);
-                    let multiplier = 0;
-                    if (pannaType === 'SP') multiplier = spPayout / 10;
-                    else if (pannaType === 'DP') multiplier = dpPayout / 10;
-                    else multiplier = tpPayout / 10;
-                    const winningAmount = (amounts[num] || 0) * multiplier;
-                    const totalVolumeThreshold = isTotalVolumeOverridden 
-                      ? (parseFloat(analysisTotalVolumeInput) || 0) 
-                      : totalCuttingVolume;
-                    return winningAmount > totalVolumeThreshold;
-                  }).length) > 0 ? 'bg-red-500 text-white' : 'bg-slate-50 text-slate-500'
+              isAnalysisView
+                ? overloadedBetsCount > 0 ? 'bg-red-500 text-white' : 'bg-slate-50 text-slate-500'
                 : highlightOverLimitOnly 
                   ? 'bg-red-500 text-white' 
                   : overLimitCount > 0 ? 'bg-red-50 text-red-600' : 'bg-slate-50 text-slate-500'
@@ -3187,9 +4152,12 @@ export const CuttingPage: React.FC = () => {
                     { key: 'panna', label: 'Panna', bgActive: 'bg-blue-600 border-blue-600' },
                     { key: 'family', label: 'Family', bgActive: 'bg-indigo-600 border-indigo-600' },
                     { key: 'jodi', label: 'Jodi', bgActive: 'bg-emerald-600 border-emerald-600' },
+                    { key: 'cp', label: 'CP', bgActive: 'bg-cyan-600 border-cyan-600' },
                     { key: 'dp', label: 'DP', bgActive: 'bg-rose-600 border-rose-600' },
                     { key: 'sp', label: 'SP', bgActive: 'bg-sky-600 border-sky-600' },
                     { key: 'sutta', label: 'Sutta', bgActive: 'bg-teal-600 border-teal-600' },
+                    { key: 'spcommon', label: 'SP Common', bgActive: 'bg-indigo-600 border-indigo-600' },
+                    { key: 'dpcommon', label: 'DP Common', bgActive: 'bg-pink-600 border-pink-600' },
                     { key: 'mpsp', label: 'Motor SP', bgActive: 'bg-purple-600 border-purple-600' },
                     { key: 'mpdp', label: 'Motor DP', bgActive: 'bg-violet-600 border-violet-600' },
                     { key: 'motor spdp', label: 'Motor SPDP', bgActive: 'bg-fuchsia-600 border-fuchsia-600' },
@@ -3230,9 +4198,12 @@ export const CuttingPage: React.FC = () => {
                     <span>
                       {addCuttingType === 'panna' || addCuttingType === 'family' ? '3-Digit Number (Panna)' :
                        addCuttingType === 'jodi' ? '2-Digit Number (Jodi)' :
+                       addCuttingType === 'cp' ? '2-Digit Number (CP)' :
                        addCuttingType === 'sp' ? 'Digit (SP 0-9)' :
                        addCuttingType === 'dp' ? 'Digit (DP 0-9)' :
                        addCuttingType === 'sutta' ? 'Digit (Sutta 0-9)' :
+                       addCuttingType === 'spcommon' ? 'Digit (SP Common 0-9)' :
+                       addCuttingType === 'dpcommon' ? 'Digit (DP Common 0-9)' :
                        addCuttingType === 'mpsp' ? 'Motor Digits (MPSP 0-9)' :
                        addCuttingType === 'mpdp' ? 'Motor Digits (MPDP 0-9)' :
                        addCuttingType === 'motor spdp' ? 'Motor Digits (SPDP 0-9)' :
@@ -3250,9 +4221,12 @@ export const CuttingPage: React.FC = () => {
                     placeholder={
                       addCuttingType === 'panna' || addCuttingType === 'family' ? 'e.g. 128 or 128-100 or 128,129-100' :
                       addCuttingType === 'jodi' ? 'e.g. 25 or 25-100 or 25,26-100' :
+                      addCuttingType === 'cp' ? 'e.g. 45 or 45-10' :
                       addCuttingType === 'sp' ? 'e.g. 5 or 5-100' :
                       addCuttingType === 'dp' ? 'e.g. 2 or 2-100' :
                       addCuttingType === 'sutta' ? 'e.g. 5 or 5-100' :
+                      addCuttingType === 'spcommon' ? 'e.g. 5 or 5-100' :
+                      addCuttingType === 'dpcommon' ? 'e.g. 5 or 5-100' :
                       addCuttingType === 'mpsp' ? 'e.g. 13579 or 13579-200' :
                       addCuttingType === 'mpdp' ? 'e.g. 1234 or 1234-500' :
                       addCuttingType === 'motor spdp' ? 'e.g. 1234 or 1234-500' :
@@ -3300,7 +4274,7 @@ export const CuttingPage: React.FC = () => {
               </div>
 
               {/* Conditionally show Apply to Family (Cuts) for relevant types */}
-              {['panna', 'jodi', 'sp', 'dp', 'sutta'].includes(addCuttingType) && (
+              {['panna', 'jodi', 'cp', 'sp', 'dp', 'sutta', 'spcommon', 'dpcommon'].includes(addCuttingType) && (
                 <div className="flex items-center space-x-2.5 bg-slate-50/50 border border-slate-100 p-4 rounded-2xl">
                   <input
                     type="checkbox"
@@ -3432,7 +4406,10 @@ export const CuttingPage: React.FC = () => {
                   label={
                     activeView === 'panna' ? '3-Digit Number (Panna)' :
                     activeView === 'jodi' ? '2-Digit Number (Jodi)' :
+                    activeView === 'cp' ? '2-Digit Number (CP)' :
                     activeView === 'sutta' ? 'Digit (Sutta 0-9)' :
+                    activeView === 'spcommon' ? 'Digit (SP Common 0-9)' :
+                    activeView === 'dpcommon' ? 'Digit (DP Common 0-9)' :
                     activeView === 'mpsp' ? 'Motor Digits (MPSP 0-9)' :
                     activeView === 'mpdp' ? 'Motor Digits (MPDP 0-9)' :
                     activeView === 'sangam' ? 'Sangam (Panna-Digit / Pana-Pana)' : 'Chakwad Digits (0-9)'
@@ -3443,7 +4420,10 @@ export const CuttingPage: React.FC = () => {
                   placeholder={
                     activeView === 'panna' ? 'e.g. 128 or 128-500' :
                     activeView === 'jodi' ? 'e.g. 25 or 25-100' :
+                    activeView === 'cp' ? 'e.g. 45 or 45-10' :
                     activeView === 'sutta' ? 'e.g. 5 or 5-200' :
+                    activeView === 'spcommon' ? 'e.g. 5 or 5-200' :
+                    activeView === 'dpcommon' ? 'e.g. 5 or 5-200' :
                     activeView === 'mpsp' ? 'e.g. 13579 or 13579-200' :
                     activeView === 'mpdp' ? 'e.g. 1234 or 1234-500' :
                     activeView === 'sangam' ? 'e.g. 128-5 or 128-5-100' : 'e.g. 1234 or 1234-100'
@@ -3514,7 +4494,7 @@ export const CuttingPage: React.FC = () => {
                 </div>
 
                 {/* Conditionally show Apply to Family (Cuts) */}
-                {(activeView === 'panna' || activeView === 'jodi' || activeView === 'sutta') && (
+                {(activeView === 'panna' || activeView === 'jodi' || activeView === 'cp' || activeView === 'sutta' || activeView === 'spcommon' || activeView === 'dpcommon') && (
                   <div className="flex items-center space-x-2 pt-1">
                     <input
                       type="checkbox"
@@ -3571,13 +4551,13 @@ export const CuttingPage: React.FC = () => {
               <div className="relative">
                 <input
                   type="text"
-                  maxLength={activeView === 'panna' ? 3 : activeView === 'jodi' ? 2 : 1}
+                  maxLength={activeView === 'panna' ? 3 : (activeView === 'jodi' || activeView === 'cp') ? 2 : 1}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value.replace(/\D/g, ''))}
                   className="w-full px-3 py-2 pl-8 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   placeholder={
                     activeView === 'panna' ? 'Search number (e.g. 128)' :
-                    activeView === 'jodi' ? 'Search Jodi (e.g. 25)' : 'Search digit (e.g. 5)'
+                    (activeView === 'jodi' || activeView === 'cp') ? 'Search Jodi (e.g. 25)' : 'Search digit (e.g. 5)'
                   }
                 />
                 <svg className="h-4 w-4 text-slate-400 absolute left-2.5 top-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -3709,7 +4689,7 @@ export const CuttingPage: React.FC = () => {
           <div>
             <p className="text-sm font-semibold text-slate-500">Current Logged Amount</p>
             <p className="text-2xl font-bold text-slate-800 mt-0.5">
-              {selectedCell ? formatCurrency(amounts[selectedCell] || 0) : '₹0'}
+              {selectedCell ? formatCurrency(getDisplayAmount(selectedCell, amounts[selectedCell] || 0)) : '₹0'}
             </p>
           </div>
 
@@ -3893,6 +4873,9 @@ export const CuttingPage: React.FC = () => {
                     chartType === 'panna' ? 'Family Chart' :
                     chartType === 'jodi' ? 'Jodi Chart' :
                     chartType === 'sutta' ? 'Sutta Chart' :
+                    chartType === 'spcommon' ? 'SP Common Chart' :
+                    chartType === 'dpcommon' ? 'DP Common Chart' :
+                    chartType === 'cp' ? 'CP Chart' :
                     chartType === 'mpsp' ? 'Motor Single Pana (MPSP)' :
                     chartType === 'mpdp' ? 'Motor Double Pana (MPDP)' :
                     chartType === 'sangam' ? 'Sangam' : 'Chakwad'
@@ -3901,7 +4884,10 @@ export const CuttingPage: React.FC = () => {
 
                 {chartType === 'panna' && renderPrintPannaTable(chartAmounts, chartLimit, chart.green_limit, chart.yellow_limit)}
                 {chartType === 'jodi' && renderPrintJodiTable(chartAmounts, chartLimit, chart.green_limit, chart.yellow_limit, true)}
+                {chartType === 'cp' && renderPrintJodiTable(chartAmounts, chartLimit, chart.green_limit, chart.yellow_limit, true, true)}
                 {chartType === 'sutta' && renderPrintSuttaTable(chartAmounts, chartLimit, chart.green_limit, chart.yellow_limit, true)}
+                {chartType === 'spcommon' && renderPrintSuttaTable(chartAmounts, chartLimit, chart.green_limit, chart.yellow_limit, true, true, false)}
+                {chartType === 'dpcommon' && renderPrintSuttaTable(chartAmounts, chartLimit, chart.green_limit, chart.yellow_limit, true, false, true)}
                 {(chartType === 'mpsp' || chartType === 'mpdp' || chartType === 'sangam' || chartType === 'chakwad') && renderPrintListTable(chartType, chartAmounts, chartLimit, chart.green_limit, chart.yellow_limit, true)}
               </div>
             );
