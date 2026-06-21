@@ -19,7 +19,9 @@ import {
   Undo2,
   Edit3,
   Trash2,
-  FileDown
+  FileDown,
+  Clipboard,
+  Info
 } from 'lucide-react';
 import { formatCurrency } from '../../../utils/currency';
 
@@ -518,6 +520,8 @@ export const CuttingPage: React.FC = () => {
   const [selectedSession, setSelectedSession] = useState<string>(() => {
     return localStorage.getItem('active_cutting_session') || 'Open';
   });
+  const [quickPasteText, setQuickPasteText] = useState('');
+  const [quickPasteLoading, setQuickPasteLoading] = useState(false);
   const [selectedChartName, setSelectedChartName] = useState<string>('');
   const [isCreateChartOpen, setIsCreateChartOpen] = useState(false);
   const [newChartName, setNewChartName] = useState('');
@@ -2151,6 +2155,265 @@ export const CuttingPage: React.FC = () => {
     }
   };
 
+  const handleQuickPasteAddCutting = async () => {
+    setAddCuttingSuccess('');
+    setAddCuttingError('');
+    if (!quickPasteText.trim()) return;
+
+    const groupVal = addCuttingGroup;
+    const dateVal = addCuttingDate;
+    const sessionVal = addCuttingSession;
+    const chartNameVal = addCuttingChartName.trim();
+    const typeVal = addCuttingType;
+
+    if (!chartNameVal) {
+      setAddCuttingError('Please select or create a Chart Name first.');
+      return;
+    }
+
+    const lines = quickPasteText.split('\n').map(l => l.trim()).filter(Boolean);
+    if (lines.length === 0) return;
+
+    setQuickPasteLoading(true);
+
+    try {
+      // Map "family", "sp", "dp" type to "panna" chart type
+      const targetChartType = (typeVal === 'family' || typeVal === 'sp' || typeVal === 'dp') ? 'panna' : typeVal;
+      const useFamily = typeVal === 'family' || addCuttingFamily;
+      const chartTypesToLog = targetChartType === 'motor spdp' ? ['mpsp', 'mpdp'] : [targetChartType];
+
+      // Fetch or create all charts first to avoid repeated calls
+      const chartsMap: Record<string, CuttingChartData> = {};
+      for (const currentType of chartTypesToLog) {
+        chartsMap[currentType] = await cuttingApi.getOrCreateChart(
+          groupVal,
+          dateVal,
+          currentType,
+          sessionVal,
+          chartNameVal
+        );
+      }
+
+      let parsedCount = 0;
+      let errorLines: string[] = [];
+
+      for (const line of lines) {
+        let numInput = line.replace(/\s+/g, '');
+        let amtInput = '';
+
+        // Try parsing hyphen amount
+        if (numInput.includes('-')) {
+          if (typeVal === 'sangam') {
+            const parts = numInput.split('-');
+            if (parts.length === 4 && /^\d+$/.test(parts[3])) {
+              amtInput = parts[3];
+              numInput = parts.slice(0, 3).join('-');
+            }
+          } else if (typeVal === 'chakwad') {
+            const lastIndex = numInput.lastIndexOf('-');
+            const beforeHyphen = numInput.substring(0, lastIndex);
+            const afterHyphen = numInput.substring(lastIndex + 1);
+            if (beforeHyphen.includes('-') && /^\d+$/.test(afterHyphen)) {
+              amtInput = afterHyphen;
+              numInput = beforeHyphen;
+            }
+          } else if (typeVal !== 'mpsp' && typeVal !== 'mpdp' && typeVal !== 'motor spdp') {
+            const lastIndex = numInput.lastIndexOf('-');
+            const afterHyphen = numInput.substring(lastIndex + 1);
+            if (/^\d+(\.\d+)?$/.test(afterHyphen)) {
+              amtInput = afterHyphen;
+              numInput = numInput.substring(0, lastIndex);
+            }
+          }
+        }
+
+        // If no amount in hyphen, fallback to input field amount
+        if (!amtInput) {
+          amtInput = addCuttingAmount.trim();
+        }
+
+        const amt = parseInt(amtInput, 10);
+        if (isNaN(amt) || amt <= 0) {
+          errorLines.push(`"${line}" (invalid amount)`);
+          continue;
+        }
+
+        const rawNumItems = typeVal === 'chakwad' ? [numInput] : numInput.split(',').filter(Boolean);
+        if (rawNumItems.length === 0) {
+          errorLines.push(`"${line}" (no digits)`);
+          continue;
+        }
+
+        let combinedTargets: string[] = [];
+        let resolveFailed = false;
+        for (const item of rawNumItems) {
+          const resolvedType = typeVal === 'family' ? 'panna' : typeVal;
+          const resolved = getResolvedTargetsForSingleNum(item, useFamily, resolvedType);
+          if (!resolved) {
+            resolveFailed = true;
+            break;
+          }
+          combinedTargets.push(...resolved);
+        }
+
+        if (resolveFailed) {
+          errorLines.push(`"${line}" (invalid digits)`);
+          continue;
+        }
+
+        const uniqueTargets = Array.from(new Set(combinedTargets));
+
+        for (const currentType of chartTypesToLog) {
+          const chart = chartsMap[currentType];
+          let keyNumber = rawNumItems.join(',');
+          if (typeVal === 'sp' && !keyNumber.toLowerCase().endsWith('sp')) {
+            keyNumber = keyNumber + ' sp';
+          } else if (typeVal === 'dp' && !keyNumber.toLowerCase().endsWith('dp')) {
+            keyNumber = keyNumber + ' dp';
+          }
+
+          await cuttingApi.logEntry(chart.id, {
+            number: keyNumber,
+            amount: amt,
+            type: 'ADD',
+            is_family: useFamily,
+            affected_numbers: uniqueTargets
+          });
+        }
+        parsedCount++;
+      }
+
+      if (parsedCount > 0) {
+        setAddCuttingSuccess(`Successfully pasted and logged ${parsedCount} entries!`);
+        setQuickPasteText('');
+        refetchRecentLogs();
+        queryClient.invalidateQueries({ queryKey: ['cuttingChart'] });
+        queryClient.invalidateQueries({ queryKey: ['cuttingChartNames'] });
+      }
+
+      if (errorLines.length > 0) {
+        setAddCuttingError(`Failed to parse some lines: ${errorLines.join(', ')}`);
+      }
+    } catch (err: any) {
+      setAddCuttingError(err?.response?.data?.detail || err?.message || 'Failed to process paste entries.');
+    } finally {
+      setQuickPasteLoading(false);
+    }
+  };
+
+  const handleQuickPasteSidebar = async () => {
+    setFormError('');
+    if (!quickPasteText.trim() || !activeChart) return;
+
+    const lines = quickPasteText.split('\n').map(l => l.trim()).filter(Boolean);
+    if (lines.length === 0) return;
+
+    setQuickPasteLoading(true);
+
+    try {
+      let parsedCount = 0;
+      let errorLines: string[] = [];
+
+      for (const line of lines) {
+        let numInput = line.replace(/\s+/g, '');
+        let amtInput = '';
+
+        if (numInput.includes('-')) {
+          if (activeView === 'sangam') {
+            const parts = numInput.split('-');
+            if (parts.length === 4 && /^\d+$/.test(parts[3])) {
+              amtInput = parts[3];
+              numInput = parts.slice(0, 3).join('-');
+            }
+          } else if (activeView === 'chakwad') {
+            const lastIndex = numInput.lastIndexOf('-');
+            const beforeHyphen = numInput.substring(0, lastIndex);
+            const afterHyphen = numInput.substring(lastIndex + 1);
+            if (beforeHyphen.includes('-') && /^\d+$/.test(afterHyphen)) {
+              amtInput = afterHyphen;
+              numInput = beforeHyphen;
+            }
+          } else {
+            const lastIndex = numInput.lastIndexOf('-');
+            const afterHyphen = numInput.substring(lastIndex + 1);
+            if (/^\d+(\.\d+)?$/.test(afterHyphen)) {
+              amtInput = afterHyphen;
+              numInput = numInput.substring(0, lastIndex);
+            }
+          }
+        }
+
+        if (!amtInput) {
+          amtInput = entryAmount.trim();
+        }
+
+        let amt = parseFloat(amtInput);
+        if (isNaN(amt) || amt <= 0) {
+          errorLines.push(`"${line}" (invalid amount)`);
+          continue;
+        }
+
+        amt = Math.round(amt * (percentage / 100));
+
+        const rawNumItems = activeView === 'chakwad' ? [numInput] : numInput.split(',').filter(Boolean);
+        if (rawNumItems.length === 0) {
+          errorLines.push(`"${line}" (no digits)`);
+          continue;
+        }
+
+        let combinedTargets: string[] = [];
+        let resolveFailed = false;
+        for (const item of rawNumItems) {
+          const resolved = getResolvedTargetsForSingleNum(item, applyFamily, activeView);
+          if (!resolved) {
+            resolveFailed = true;
+            break;
+          }
+          combinedTargets.push(...resolved);
+        }
+
+        if (resolveFailed) {
+          errorLines.push(`"${line}" (invalid digits)`);
+          continue;
+        }
+
+        const uniqueTargets = Array.from(new Set(combinedTargets));
+
+        let keyNumber = rawNumItems.join(',');
+        if ((activeView as string) === 'sp' && !keyNumber.toLowerCase().endsWith('sp')) {
+          keyNumber = keyNumber + ' sp';
+        } else if ((activeView as string) === 'dp' && !keyNumber.toLowerCase().endsWith('dp')) {
+          keyNumber = keyNumber + ' dp';
+        } else if (activeView !== 'chakwad' && uniqueTargets.length === 1) {
+          keyNumber = uniqueTargets[0];
+        }
+
+        await cuttingApi.logEntry(activeChart.id, {
+          number: keyNumber,
+          amount: amt,
+          type: entryMode,
+          is_family: applyFamily,
+          affected_numbers: uniqueTargets
+        });
+        parsedCount++;
+      }
+
+      if (parsedCount > 0) {
+        setQuickPasteText('');
+        queryClient.invalidateQueries({ queryKey: ['cuttingChart', selectedGroupId, selectedDate] });
+        queryClient.invalidateQueries({ queryKey: ['cuttingChartNames', selectedGroupId, selectedDate] });
+      }
+
+      if (errorLines.length > 0) {
+        setFormError(`Failed to parse some lines: ${errorLines.join(', ')}`);
+      }
+    } catch (err: any) {
+      setFormError(err?.response?.data?.detail || err?.message || 'Failed to process paste entries.');
+    } finally {
+      setQuickPasteLoading(false);
+    }
+  };
+
   const handleCellModalSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedCell) return;
@@ -3057,6 +3320,34 @@ export const CuttingPage: React.FC = () => {
                 <span>Add Entry</span>
               </Button>
             </form>
+
+            {/* Quick Paste Area */}
+            <div className="bg-slate-50 border border-dashed border-slate-200 rounded-2xl p-6 space-y-3">
+              <div className="flex items-center justify-between text-xs text-slate-500">
+                <span className="font-semibold flex items-center gap-1"><Clipboard className="h-4 w-4" /> Fast Paste Helper</span>
+                <span className="flex items-center gap-1">
+                  <span>Format: <code>Number-Amount</code> per line (e.g. <code>128-100</code>)</span>
+                  <span className="cursor-help text-slate-400" title="Paste raw logs directly. E.g. writing 128-100 on a line translates to 128 logged with 100 amount. If you omit the amount (e.g. 128), it defaults to the Amount input field value above.">
+                    <Info className="h-3.5 w-3.5" />
+                  </span>
+                </span>
+              </div>
+              <textarea
+                className="w-full h-24 text-sm bg-white border border-slate-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-mono"
+                placeholder="Paste entries here...&#10;128-100&#10;129-200&#10;130"
+                value={quickPasteText}
+                onChange={(e) => setQuickPasteText(e.target.value)}
+              />
+              <Button 
+                type="button" 
+                variant="secondary" 
+                className="w-full py-2.5 font-bold text-xs" 
+                onClick={handleQuickPasteAddCutting}
+                isLoading={quickPasteLoading}
+              >
+                Parse & Log Entries
+              </Button>
+            </div>
           </div>
 
           {/* Recent Added Logs Column */}
@@ -3243,6 +3534,35 @@ export const CuttingPage: React.FC = () => {
                   <span>Record Entry</span>
                 </Button>
               </form>
+
+              {/* Separator line */}
+              <div className="border-t border-slate-100 my-4" />
+
+              {/* Quick Paste Area */}
+              <div className="bg-slate-50 border border-dashed border-slate-200 rounded-xl p-3.5 space-y-2.5">
+                <div className="flex items-center justify-between text-[11px] text-slate-500">
+                  <span className="font-bold flex items-center gap-1"><Clipboard className="h-3.5 w-3.5" /> Fast Paste Helper</span>
+                  <span className="cursor-help text-slate-400" title="Paste raw logs directly. E.g. writing 128-100 on a line translates to 128 logged with 100 amount. If you omit the amount (e.g. 128), it defaults to the Amount input field value above.">
+                    <Info className="h-3 w-3" />
+                  </span>
+                </div>
+                <textarea
+                  className="w-full h-16 text-xs bg-white border border-slate-200 rounded-lg p-2 focus:outline-none focus:ring-1 focus:ring-blue-500 font-mono"
+                  placeholder="Paste entries here...&#10;128-100&#10;129-200"
+                  value={quickPasteText}
+                  onChange={(e) => setQuickPasteText(e.target.value)}
+                />
+                <Button 
+                  type="button" 
+                  variant="secondary" 
+                  size="sm" 
+                  className="w-full text-xs py-1.5 font-bold" 
+                  onClick={handleQuickPasteSidebar}
+                  isLoading={quickPasteLoading}
+                >
+                  Parse & Log Entries
+                </Button>
+              </div>
             </div>
 
             {/* Quick Search Card */}
